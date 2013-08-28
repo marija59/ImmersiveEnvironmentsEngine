@@ -70,12 +70,12 @@ public class DefineEvent {
 		textField.setBounds(84, 33, 283, 20);
 		frame.getContentPane().add(textField);
 		
-		JLabel label_2 = new JLabel("Type");
-		label_2.setForeground(Color.WHITE);
-		label_2.setBounds(52, 62, 24, 14);
-		frame.getContentPane().add(label_2);
+		JLabel lblProducedBy = new JLabel("Produced by:");
+		lblProducedBy.setForeground(Color.WHITE);
+		lblProducedBy.setBounds(52, 62, 115, 14);
+		frame.getContentPane().add(lblProducedBy);
 		
-		JRadioButton rbUncontrollable = new JRadioButton("Uncontrollable");
+		JRadioButton rbUncontrollable = new JRadioButton("User");
 		rbUncontrollable.addFocusListener(new FocusAdapter() {
 			@Override
 			public void focusGained(FocusEvent e) {
@@ -84,10 +84,10 @@ public class DefineEvent {
 		});
 		rbUncontrollable.setForeground(Color.WHITE);
 		rbUncontrollable.setBackground(Color.GRAY);
-		rbUncontrollable.setBounds(84, 58, 93, 23);
+		rbUncontrollable.setBounds(84, 83, 93, 23);
 		frame.getContentPane().add(rbUncontrollable);
 		
-		JRadioButton rbControllable = new JRadioButton("Controllable");
+		JRadioButton rbControllable = new JRadioButton("Interactive environment");
 		rbControllable.addFocusListener(new FocusAdapter() {
 			@Override
 			public void focusGained(FocusEvent e) {
@@ -96,7 +96,7 @@ public class DefineEvent {
 		});
 		rbControllable.setForeground(Color.WHITE);
 		rbControllable.setBackground(Color.GRAY);
-		rbControllable.setBounds(84, 88, 83, 23);
+		rbControllable.setBounds(84, 109, 149, 23);
 		frame.getContentPane().add(rbControllable);
 		
 		ButtonGroup TypeSubject = new ButtonGroup();
