@@ -5,7 +5,23 @@ import javax.swing.JLabel;
 import javax.swing.JComboBox;
 import javax.swing.JCheckBox;
 import javax.swing.JTextField;
+
 import java.awt.Font;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+class comboItemEvents  
+{  
+  String name;  
+  int value;  
+  public comboItemEvents(String n, int v)  
+  {  
+    name = n; value = v;  
+  } 
+  public String toString(){return name;} 
+}
 
 
 public class Events {
@@ -18,7 +34,19 @@ public class Events {
 	private JTextField textField_4;
 	private JTextField textField_5;
 	private JTextField textField_6;
+	JComboBox cbEvents = new JComboBox();
+	
 
+	private void getData(){		
+		//try	{
+			
+			
+			
+			
+		//}
+		//catch(SQLException ex){System.out.print(ex);}
+	}
+	
 	/**
 	 * Launch the application.
 	 */
@@ -38,8 +66,32 @@ public class Events {
 	/**
 	 * Create the application.
 	 */
-	public Events() {
-		initialize();
+	public Events() {		
+		initialize();		
+		getData();
+		cbEvents.removeAll();
+		try
+		{
+			ConnectDatabase cdb = new ConnectDatabase();        
+			String Query = "SELECT distinct events.EventName, events.idevents from sentences "
+					+  " left join events  on sentences.VerbID = events.idevents";								
+			ResultSet result = cdb.st.executeQuery(Query);			  			  
+			String EventID, EventName;	
+			List<comboItemEvents> events = new ArrayList<comboItemEvents>();		    
+			comboItemEvents cItem = new comboItemEvents("", -1);
+			events.add(cItem);
+			while(result.next()) {
+				EventID = result.getString("events.idevents");								
+				EventName = result.getString("events.EventName");				
+				cItem = new comboItemEvents(EventName, Integer.parseInt(EventID));
+				events.add(cItem);	
+			}
+			comboItemEvents [] eventArray = events.toArray( new comboItemEvents[events.size()]);	
+			System.out.print(eventArray[1]);
+			System.out.print(eventArray[2]);
+			System.out.print(eventArray[3]);
+			cbEvents = new JComboBox(eventArray);
+		}catch(SQLException ex){System.out.print(ex);}
 	}
 
 	/**
@@ -56,9 +108,11 @@ public class Events {
 		lblEvent.setBounds(22, 11, 46, 14);
 		frmAndThenHappen.getContentPane().add(lblEvent);
 		
-		JComboBox comboBox = new JComboBox();
-		comboBox.setBounds(22, 36, 187, 20);
-		frmAndThenHappen.getContentPane().add(comboBox);
+		
+		cbEvents.setBounds(22, 36, 187, 20);
+		frmAndThenHappen.getContentPane().add(cbEvents);
+		
+		
 		
 		JLabel lblAgentprop = new JLabel("Agent/Prop/Place");
 		lblAgentprop.setFont(new Font("Calibri", Font.PLAIN, 11));

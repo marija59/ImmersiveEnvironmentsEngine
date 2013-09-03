@@ -39,6 +39,7 @@ import javax.swing.text.StyleContext;
 import javax.swing.text.StyledDocument;
 import javax.swing.JEditorPane;
 import javax.swing.JTextArea;
+import javax.swing.JRadioButton;
 
 class comboItem  
 {  
@@ -86,7 +87,9 @@ public class Sentences {
 		      }		 	 		 	  
 		 	  comboItem [] subjectArray = subjects.toArray( new comboItem[subjects.size()]);		 	 
 		 	  cbSubject = new JComboBox(subjectArray);
+		 	  cbSubject.setFont(new Font("Calibri", Font.PLAIN, 11));
 		 	  cbObject = new JComboBox(subjectArray);
+		 	  cbObject.setFont(new Font("Calibri", Font.PLAIN, 11));
 		 	 		      		      
 		      result = cdb.st.executeQuery("SELECT idevents, EventName FROM events");		      
 		      List<comboItem> events = new ArrayList<comboItem>();
@@ -102,6 +105,7 @@ public class Sentences {
 		      }			  
 			  comboItem [] eventArray = events.toArray( new comboItem[events.size()]);
 			  cbVerb = new JComboBox(eventArray);
+			  cbVerb.setFont(new Font("Calibri", Font.PLAIN, 11));
 
 			  result = cdb.st.executeQuery("SELECT idplaces, PlaceName FROM places");
 			  List<comboItem> places = new ArrayList<comboItem>();
@@ -117,6 +121,7 @@ public class Sentences {
 		      }
 			  comboItem [] placeArray = places.toArray( new comboItem[places.size()]);
 			  cbLocation = new JComboBox(placeArray);
+			  cbLocation.setFont(new Font("Calibri", Font.PLAIN, 11));
 			  cbLocationObject = new JComboBox(placeArray);
 			  
 		      cdb.st.close();	
@@ -166,14 +171,14 @@ public class Sentences {
 			}
 		});
 		
-		frmTellMeA.getContentPane().setBackground(Color.GRAY);
+		//frmTellMeA.getContentPane().setBackground(Color.GRAY);
 		frmTellMeA.setBounds(100, 100, 526, 696);
 		frmTellMeA.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frmTellMeA.getContentPane().setLayout(null);
 		
 		JLabel label = new JLabel("Agent/Prop/Participant");
 		label.setFont(new Font("Calibri", Font.PLAIN, 11));
-		label.setForeground(Color.WHITE);
+		label.setForeground(Color.BLACK);
 		label.setBounds(26, 28, 155, 14);
 		frmTellMeA.getContentPane().add(label);
 		
@@ -185,15 +190,13 @@ public class Sentences {
 				String[] args = new String[0];
 				defSubject.main(args);
 			}
-		});
-		button.setForeground(Color.WHITE);
-		button.setBackground(Color.GRAY);
+		});		
 		button.setBounds(178, 24, 89, 23);
 		frmTellMeA.getContentPane().add(button);
 		
 		JLabel label_1 = new JLabel("Place");
 		label_1.setFont(new Font("Calibri", Font.PLAIN, 12));
-		label_1.setForeground(Color.WHITE);
+		label_1.setForeground(Color.BLACK);
 		label_1.setBounds(26, 62, 46, 14);
 		frmTellMeA.getContentPane().add(label_1);
 		
@@ -206,14 +209,12 @@ public class Sentences {
 				defPlace.main(args);
 			}
 		});
-		button_1.setForeground(Color.WHITE);
-		button_1.setBackground(Color.GRAY);
 		button_1.setBounds(178, 58, 89, 23);
 		frmTellMeA.getContentPane().add(button_1);
 		
 		JLabel label_2 = new JLabel("Event");
 		label_2.setFont(new Font("Calibri", Font.PLAIN, 12));
-		label_2.setForeground(Color.WHITE);
+		label_2.setForeground(Color.BLACK);
 		label_2.setBounds(26, 96, 46, 14);
 		frmTellMeA.getContentPane().add(label_2);
 		
@@ -226,60 +227,54 @@ public class Sentences {
 				defEvent.main(args);;
 			}
 		});
-		button_2.setForeground(Color.WHITE);
-		button_2.setBackground(Color.GRAY);
+		
 		button_2.setBounds(178, 92, 89, 23);
 		frmTellMeA.getContentPane().add(button_2);
 		
 		JLabel label_3 = new JLabel("Sentences:");
-		label_3.setForeground(Color.WHITE);
+		label_3.setForeground(Color.BLACK);
 		label_3.setFont(new Font("Calibri", Font.BOLD, 13));
 		label_3.setBounds(26, 136, 89, 14);
 		frmTellMeA.getContentPane().add(label_3);
 		
 		JLabel label_4 = new JLabel("Subject");
 		label_4.setFont(new Font("Calibri", Font.PLAIN, 11));
-		label_4.setForeground(Color.WHITE);
+		label_4.setForeground(Color.BLACK);
 		label_4.setBounds(26, 161, 46, 14);
 		frmTellMeA.getContentPane().add(label_4);
-		
-		cbSubject.setForeground(Color.WHITE);
-		cbSubject.setBackground(Color.GRAY);
+				
 		cbSubject.setBounds(26, 192, 145, 20);
 		frmTellMeA.getContentPane().add(cbSubject);
 		
 		JLabel label_5 = new JLabel("Verb");
 		label_5.setFont(new Font("Calibri", Font.PLAIN, 11));
-		label_5.setForeground(Color.WHITE);
+		label_5.setForeground(Color.BLACK);
 		label_5.setBounds(191, 161, 46, 14);
 		frmTellMeA.getContentPane().add(label_5);
-				
-		cbVerb.setBackground(Color.GRAY);
+						
 		cbVerb.setBounds(191, 192, 145, 20);
 		frmTellMeA.getContentPane().add(cbVerb);
-				
-		cbObject.setBackground(Color.GRAY);
+						
 		cbObject.setBounds(356, 192, 141, 20);
 		frmTellMeA.getContentPane().add(cbObject);
 		
 		JLabel label_6 = new JLabel("Object");
 		label_6.setFont(new Font("Calibri", Font.PLAIN, 11));
-		label_6.setForeground(Color.WHITE);
+		label_6.setForeground(Color.BLACK);
 		label_6.setBounds(356, 161, 46, 14);
 		frmTellMeA.getContentPane().add(label_6);
 		
 		JLabel label_7 = new JLabel("Location");
 		label_7.setFont(new Font("Calibri", Font.PLAIN, 11));
-		label_7.setForeground(Color.WHITE);
+		label_7.setForeground(Color.BLACK);
 		label_7.setBounds(26, 223, 46, 14);
 		frmTellMeA.getContentPane().add(label_7);
 				
-		cbLocation.setForeground(Color.WHITE);
-		cbLocation.setBackground(Color.GRAY);
 		cbLocation.setBounds(26, 248, 145, 20);
 		frmTellMeA.getContentPane().add(cbLocation);
 		
 		JTextPane textPane = new JTextPane();
+		textPane.setFont(new Font("Calibri", Font.PLAIN, 11));
 		textPane.setEditable(false);
 		textPane.setBounds(26, 339, 471, 195);
 		frmTellMeA.getContentPane().add(textPane);
@@ -304,21 +299,17 @@ public class Sentences {
 		        initialize();
 			}
 		});
-		
-		button_3.setForeground(Color.WHITE);
-		button_3.setBackground(Color.GRAY);
+				
 		button_3.setBounds(393, 305, 89, 23);
 		frmTellMeA.getContentPane().add(button_3);
 		
-		
-		cbLocationObject.setForeground(Color.WHITE);
-		cbLocationObject.setFont(new Font("Calibri", Font.PLAIN, 11));
-		cbLocationObject.setBackground(Color.GRAY);
+				
+		cbLocationObject.setFont(new Font("Calibri", Font.PLAIN, 11));		
 		cbLocationObject.setBounds(356, 248, 141, 20);
 		frmTellMeA.getContentPane().add(cbLocationObject);
 		
 		JLabel label_8 = new JLabel("Location");
-		label_8.setForeground(Color.WHITE);
+		label_8.setForeground(Color.BLACK);
 		label_8.setFont(new Font("Calibri", Font.PLAIN, 11));
 		label_8.setBounds(356, 223, 46, 14);
 		frmTellMeA.getContentPane().add(label_8);
@@ -348,6 +339,13 @@ public class Sentences {
 		frmTellMeA.getContentPane().add(btnNewButton_1);
 		
 		JButton btnNewButton_2 = new JButton("Define Agent/Prop");
+		btnNewButton_2.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				Agents agent = new Agents();		
+				String[] args = new String[0];
+				agent.main(args);
+			}
+		});
 		btnNewButton_2.setFont(new Font("Calibri", Font.PLAIN, 11));
 		btnNewButton_2.setBounds(247, 555, 121, 23);
 		frmTellMeA.getContentPane().add(btnNewButton_2);
@@ -357,10 +355,18 @@ public class Sentences {
 		btnNewButton_3.setBounds(378, 555, 104, 23);
 		frmTellMeA.getContentPane().add(btnNewButton_3);
 		
+		JRadioButton rdbtnMust = new JRadioButton("MUST");
+		rdbtnMust.setFont(new Font("Calibri", Font.PLAIN, 11));
+		rdbtnMust.setBounds(26, 277, 109, 23);
+		frmTellMeA.getContentPane().add(rdbtnMust);
 		
-		System.out.println("INIT 2");
+		JRadioButton rdbtnMay = new JRadioButton("MAY");
+		rdbtnMay.setFont(new Font("Calibri", Font.PLAIN, 11));
+		rdbtnMay.setBounds(26, 309, 109, 23);
+		frmTellMeA.getContentPane().add(rdbtnMay);
+						
 		ConnectDatabase cdb = new ConnectDatabase();        
-		String Query = "SELECT subjects.SubjectTypesID, subjects.SubjectName, places.PlaceName, events.EventName, IFNULL(o.SubjectName, '') as ObjectName, IFNULL(po.PlaceName, '') as ObjPlaceName from sentences "
+		String Query = "SELECT subjects.SubjectTypesID, subjects.SubjectName, places.PlaceName, events.EventName, IFNULL(o.SubjectTypesID,'') as objTypesID, IFNULL(o.SubjectName, '') as ObjectName, IFNULL(po.PlaceName, '') as ObjPlaceName from sentences "
 			+ " left join subjects on sentences.SubjectID = subjects.idsubjects"
 		+ " left join subjects o on sentences.ObjectID = o.idsubjects"
 		+ " left join events  on sentences.VerbID = events.idevents"
@@ -368,9 +374,10 @@ public class Sentences {
 		+ " left join places po on sentences.LocationObjectID = po.idplaces ";
 		try	{
 			ResultSet result = cdb.st.executeQuery(Query);			  			  
-			String SubType, SubName, SubPlaceName, Verb, ObjName, ObjPlaceName;			 
+			String SubType, SubName, SubPlaceName, Verb, ObjName, ObjPlaceName, ObjType;			 
 			while(result.next()) {
 				SubType = result.getString("subjects.SubjectTypesID");
+				ObjType = result.getString("objTypesID");
 				System.out.println(SubType);
 				SubName = result.getString("subjects.SubjectName");
 				SubPlaceName = result.getString("places.PlaceName");
@@ -391,7 +398,9 @@ public class Sentences {
 					StyleConstants.setForeground(style, Color.gray);
 					doc.insertString(doc.getLength(), Verb +"  ", style); 
 				
-					StyleConstants.setForeground(style, Color.red);
+					if (ObjType.equals("0")){
+						StyleConstants.setForeground(style, Color.blue);}
+					else{StyleConstants.setForeground(style, Color.red);}
 					doc.insertString(doc.getLength(), ObjName, style);
 				
 					StyleConstants.setForeground(style, Color.orange);
