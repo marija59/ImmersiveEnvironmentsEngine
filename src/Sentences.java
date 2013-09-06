@@ -40,6 +40,7 @@ import javax.swing.text.StyledDocument;
 import javax.swing.JEditorPane;
 import javax.swing.JTextArea;
 import javax.swing.JRadioButton;
+import javax.swing.JSeparator;
 
 class comboItem  
 {  
@@ -357,13 +358,22 @@ public class Sentences {
 		
 		JRadioButton rdbtnMust = new JRadioButton("MUST");
 		rdbtnMust.setFont(new Font("Calibri", Font.PLAIN, 11));
-		rdbtnMust.setBounds(26, 277, 109, 23);
+		rdbtnMust.setBounds(26, 277, 63, 23);
 		frmTellMeA.getContentPane().add(rdbtnMust);
 		
 		JRadioButton rdbtnMay = new JRadioButton("MAY");
 		rdbtnMay.setFont(new Font("Calibri", Font.PLAIN, 11));
-		rdbtnMay.setBounds(26, 309, 109, 23);
+		rdbtnMay.setBounds(26, 305, 109, 23);
 		frmTellMeA.getContentPane().add(rdbtnMay);
+		
+		JRadioButton rdbtnForbidden = new JRadioButton("FORBIDDEN");
+		rdbtnForbidden.setFont(new Font("Calibri", Font.PLAIN, 11));
+		rdbtnForbidden.setBounds(91, 276, 109, 23);
+		frmTellMeA.getContentPane().add(rdbtnForbidden);
+		
+		JSeparator separator = new JSeparator();
+		separator.setBounds(26, 121, 471, 2);
+		frmTellMeA.getContentPane().add(separator);
 						
 		ConnectDatabase cdb = new ConnectDatabase();        
 		String Query = "SELECT subjects.SubjectTypesID, subjects.SubjectName, places.PlaceName, events.EventName, IFNULL(o.SubjectTypesID,'') as objTypesID, IFNULL(o.SubjectName, '') as ObjectName, IFNULL(po.PlaceName, '') as ObjPlaceName from sentences "
