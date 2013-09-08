@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class Sequence {
+public class Concurrent {
 
 	private JFrame frmTimer;
 	private JTextField txtName;
@@ -57,7 +57,7 @@ public class Sequence {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					Sequence window = new Sequence();
+					Concurrent window = new Concurrent();
 					window.frmTimer.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -69,7 +69,7 @@ public class Sequence {
 	/**
 	 * Create the application.
 	 */
-	public Sequence() {
+	public Concurrent() {
 		getData();
 		initialize();
 		
@@ -80,7 +80,7 @@ public class Sequence {
 	 */
 	private void initialize() {
 		frmTimer = new JFrame();
-		frmTimer.setTitle("Timer - Sequence");
+		frmTimer.setTitle("Concurrence");
 		frmTimer.setBounds(100, 100, 433, 178);
 		frmTimer.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frmTimer.getContentPane().setLayout(null);
@@ -109,14 +109,14 @@ public class Sequence {
 		frmTimer.getContentPane().add(txtName);
 		txtName.setColumns(10);
 		
-		JButton btnNewButton_1 = new JButton("Create sequence");
+		JButton btnNewButton_1 = new JButton("Create concurrence");
 		btnNewButton_1.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				ConnectDatabase cdb = new ConnectDatabase();
 		        System.out.println("After Connect Database!");
 		        int EventID = ((comboItem)cbTriggerEvent.getSelectedItem()).value;		     
 		        try {
-		            int val = cdb.st.executeUpdate("INSERT INTO sequences (NameSeq, TriggeredByEvent) VALUES ('"+txtName.getText()+"',"+Integer.toString(EventID)+")");
+		            int val = cdb.st.executeUpdate("INSERT INTO concurrences (NameConc, TriggeredByEvent) VALUES ('"+txtName.getText()+"',"+Integer.toString(EventID)+")");
 		            System.out.println("1 row affected");		           
 		        } catch (SQLException ex) {
 		        	System.out.println("SQL statement is not executed!"+ex);

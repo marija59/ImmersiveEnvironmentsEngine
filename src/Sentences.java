@@ -173,7 +173,7 @@ public class Sentences {
 		});
 		
 		//frmTellMeA.getContentPane().setBackground(Color.GRAY);
-		frmTellMeA.setBounds(100, 100, 526, 696);
+		frmTellMeA.setBounds(100, 100, 526, 751);
 		frmTellMeA.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frmTellMeA.getContentPane().setLayout(null);
 		
@@ -324,7 +324,7 @@ public class Sentences {
 				time.main(args);
 			}
 		});
-		btnNewButton.setBounds(26, 555, 89, 23);
+		btnNewButton.setBounds(26, 555, 121, 23);
 		frmTellMeA.getContentPane().add(btnNewButton);
 		
 		JButton btnNewButton_1 = new JButton("Define Events");
@@ -336,7 +336,7 @@ public class Sentences {
 				events.main(args);
 			}
 		});
-		btnNewButton_1.setBounds(125, 555, 112, 23);
+		btnNewButton_1.setBounds(247, 584, 121, 23);
 		frmTellMeA.getContentPane().add(btnNewButton_1);
 		
 		JButton btnNewButton_2 = new JButton("Define Agent/Prop");
@@ -374,6 +374,16 @@ public class Sentences {
 		JSeparator separator = new JSeparator();
 		separator.setBounds(26, 121, 471, 2);
 		frmTellMeA.getContentPane().add(separator);
+		
+		JButton btnCreateSequence = new JButton("New sequence");
+		btnCreateSequence.setFont(new Font("Calibri", Font.PLAIN, 11));
+		btnCreateSequence.setBounds(26, 584, 121, 23);
+		frmTellMeA.getContentPane().add(btnCreateSequence);
+		
+		JButton btnNewButton_4 = new JButton("Update sequence");
+		btnNewButton_4.setFont(new Font("Calibri", Font.PLAIN, 11));
+		btnNewButton_4.setBounds(26, 611, 121, 23);
+		frmTellMeA.getContentPane().add(btnNewButton_4);
 						
 		ConnectDatabase cdb = new ConnectDatabase();        
 		String Query = "SELECT subjects.SubjectTypesID, subjects.SubjectName, places.PlaceName, events.EventName, IFNULL(o.SubjectTypesID,'') as objTypesID, IFNULL(o.SubjectName, '') as ObjectName, IFNULL(po.PlaceName, '') as ObjPlaceName from sentences "

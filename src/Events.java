@@ -86,10 +86,7 @@ public class Events {
 				cItem = new comboItemEvents(EventName, Integer.parseInt(EventID));
 				events.add(cItem);	
 			}
-			comboItemEvents [] eventArray = events.toArray( new comboItemEvents[events.size()]);	
-			System.out.print(eventArray[1]);
-			System.out.print(eventArray[2]);
-			System.out.print(eventArray[3]);
+			comboItemEvents [] eventArray = events.toArray( new comboItemEvents[events.size()]);			
 			cbEvents = new JComboBox(eventArray);
 		}catch(SQLException ex){System.out.print(ex);}
 	}
