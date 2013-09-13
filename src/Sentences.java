@@ -41,6 +41,8 @@ import javax.swing.JEditorPane;
 import javax.swing.JTextArea;
 import javax.swing.JRadioButton;
 import javax.swing.JSeparator;
+import javax.swing.JToggleButton;
+import javax.swing.JSplitPane;
 
 class comboItem  
 {  
@@ -61,6 +63,8 @@ public class Sentences {
 	JComboBox cbObject = new JComboBox();
 	JComboBox cbLocation = new JComboBox();
 	JComboBox cbLocationObject = new JComboBox();	
+	JTextPane textPane = new JTextPane();
+	
 	
 	
 	private void getData(){
@@ -130,6 +134,51 @@ public class Sentences {
 		    catch( Exception e ) {
 		      e.printStackTrace();
 		}
+		ConnectDatabase cdb = new ConnectDatabase();        
+		String Query = "SELECT subjects.SubjectTypesID, subjects.SubjectName, places.PlaceName, events.EventName, IFNULL(o.SubjectTypesID,'') as objTypesID, IFNULL(o.SubjectName, '') as ObjectName, IFNULL(po.PlaceName, '') as ObjPlaceName from sentences "
+			+ " left join subjects on sentences.SubjectID = subjects.idsubjects"
+		+ " left join subjects o on sentences.ObjectID = o.idsubjects"
+		+ " left join events  on sentences.VerbID = events.idevents"
+		+ " left join places on sentences.LocationID = places.idplaces" 
+		+ " left join places po on sentences.LocationObjectID = po.idplaces ";
+		try	{
+			ResultSet result = cdb.st.executeQuery(Query);			  			  
+			String SubType, SubName, SubPlaceName, Verb, ObjName, ObjPlaceName, ObjType;			 
+			while(result.next()) {
+				SubType = result.getString("subjects.SubjectTypesID");
+				ObjType = result.getString("objTypesID");
+				System.out.println(SubType);
+				SubName = result.getString("subjects.SubjectName");
+				SubPlaceName = result.getString("places.PlaceName");
+				Verb = result.getString("events.EventName");
+				ObjName = result.getString("ObjectName");
+				ObjPlaceName = result.getString("ObjPlaceName");
+				StyledDocument doc = textPane.getStyledDocument();
+
+				try {
+					Style style = textPane.addStyle("Style", null);
+					if (SubType.equals("0")){
+						StyleConstants.setForeground(style, Color.blue);}
+					else{StyleConstants.setForeground(style, Color.red);}
+					doc.insertString(doc.getLength(), SubName + "   ", style);
+					StyleConstants.setForeground(style, Color.orange);
+					doc.insertString(doc.getLength(), " (" + SubPlaceName + ") ", style);
+
+					StyleConstants.setForeground(style, Color.gray);
+					doc.insertString(doc.getLength(), Verb +"  ", style); 
+				
+					if (ObjType.equals("0")){
+						StyleConstants.setForeground(style, Color.blue);}
+					else{StyleConstants.setForeground(style, Color.red);}
+					doc.insertString(doc.getLength(), ObjName, style);
+				
+					StyleConstants.setForeground(style, Color.orange);
+					doc.insertString(doc.getLength(), " (" + ObjPlaceName + ") \n", style);				
+				}	
+				catch (BadLocationException ex){}			
+			}
+		}
+		catch(SQLException ex){System.out.print(ex);}
 		
 	}
 
@@ -173,7 +222,7 @@ public class Sentences {
 		});
 		
 		//frmTellMeA.getContentPane().setBackground(Color.GRAY);
-		frmTellMeA.setBounds(100, 100, 526, 751);
+		frmTellMeA.setBounds(100, 100, 946, 751);
 		frmTellMeA.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frmTellMeA.getContentPane().setLayout(null);
 		
@@ -190,13 +239,14 @@ public class Sentences {
 				DefineSubject defSubject = new DefineSubject();		
 				String[] args = new String[0];
 				defSubject.main(args);
+				getData();
 			}
 		});		
 		button.setBounds(178, 24, 89, 23);
 		frmTellMeA.getContentPane().add(button);
 		
 		JLabel label_1 = new JLabel("Place");
-		label_1.setFont(new Font("Calibri", Font.PLAIN, 12));
+		label_1.setFont(new Font("Calibri", Font.PLAIN, 11));
 		label_1.setForeground(Color.BLACK);
 		label_1.setBounds(26, 62, 46, 14);
 		frmTellMeA.getContentPane().add(label_1);
@@ -208,13 +258,14 @@ public class Sentences {
 				DefinePlace defPlace = new DefinePlace();		
 				String[] args = new String[0];
 				defPlace.main(args);
+				getData();
 			}
 		});
 		button_1.setBounds(178, 58, 89, 23);
 		frmTellMeA.getContentPane().add(button_1);
 		
 		JLabel label_2 = new JLabel("Event");
-		label_2.setFont(new Font("Calibri", Font.PLAIN, 12));
+		label_2.setFont(new Font("Calibri", Font.PLAIN, 11));
 		label_2.setForeground(Color.BLACK);
 		label_2.setBounds(26, 96, 46, 14);
 		frmTellMeA.getContentPane().add(label_2);
@@ -225,7 +276,8 @@ public class Sentences {
 			public void actionPerformed(ActionEvent e) {
 				DefineEvent defEvent = new DefineEvent();		
 				String[] args = new String[0];
-				defEvent.main(args);;
+				defEvent.main(args);
+				getData();
 			}
 		});
 		
@@ -274,11 +326,13 @@ public class Sentences {
 		cbLocation.setBounds(26, 248, 145, 20);
 		frmTellMeA.getContentPane().add(cbLocation);
 		
-		JTextPane textPane = new JTextPane();
+		
 		textPane.setFont(new Font("Calibri", Font.PLAIN, 11));
 		textPane.setEditable(false);
-		textPane.setBounds(26, 339, 471, 195);
-		frmTellMeA.getContentPane().add(textPane);
+		//textPane.setBounds(26, 339, 471, 195);
+		JScrollPane sp = new JScrollPane(textPane);
+		sp.setBounds(26, 339, 471, 195);
+		frmTellMeA.getContentPane().add(sp);
 		
 		JButton button_3 = new JButton("Add new");
 		button_3.setFont(new Font("Calibri", Font.PLAIN, 11));
@@ -297,7 +351,7 @@ public class Sentences {
 		        } catch (SQLException ex) {
 		        	System.out.println("SQL statement is not executed!"+ex);
 		        }
-		        initialize();
+		        getData();
 			}
 		});
 				
@@ -376,60 +430,56 @@ public class Sentences {
 		frmTellMeA.getContentPane().add(separator);
 		
 		JButton btnCreateSequence = new JButton("New sequence");
+		btnCreateSequence.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Sequence sequence = new Sequence();
+				String[] args = new String[0];
+				sequence.main(args);
+			}
+		});
 		btnCreateSequence.setFont(new Font("Calibri", Font.PLAIN, 11));
 		btnCreateSequence.setBounds(26, 584, 121, 23);
 		frmTellMeA.getContentPane().add(btnCreateSequence);
 		
 		JButton btnNewButton_4 = new JButton("Update sequence");
+		btnNewButton_4.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				UpdateSequence upd_sequence = new UpdateSequence();
+				String[] args = new String[0];
+				upd_sequence.main(args);
+			}
+		});
 		btnNewButton_4.setFont(new Font("Calibri", Font.PLAIN, 11));
 		btnNewButton_4.setBounds(26, 611, 121, 23);
 		frmTellMeA.getContentPane().add(btnNewButton_4);
-						
-		ConnectDatabase cdb = new ConnectDatabase();        
-		String Query = "SELECT subjects.SubjectTypesID, subjects.SubjectName, places.PlaceName, events.EventName, IFNULL(o.SubjectTypesID,'') as objTypesID, IFNULL(o.SubjectName, '') as ObjectName, IFNULL(po.PlaceName, '') as ObjPlaceName from sentences "
-			+ " left join subjects on sentences.SubjectID = subjects.idsubjects"
-		+ " left join subjects o on sentences.ObjectID = o.idsubjects"
-		+ " left join events  on sentences.VerbID = events.idevents"
-		+ " left join places on sentences.LocationID = places.idplaces" 
-		+ " left join places po on sentences.LocationObjectID = po.idplaces ";
-		try	{
-			ResultSet result = cdb.st.executeQuery(Query);			  			  
-			String SubType, SubName, SubPlaceName, Verb, ObjName, ObjPlaceName, ObjType;			 
-			while(result.next()) {
-				SubType = result.getString("subjects.SubjectTypesID");
-				ObjType = result.getString("objTypesID");
-				System.out.println(SubType);
-				SubName = result.getString("subjects.SubjectName");
-				SubPlaceName = result.getString("places.PlaceName");
-				Verb = result.getString("events.EventName");
-				ObjName = result.getString("ObjectName");
-				ObjPlaceName = result.getString("ObjPlaceName");
-				StyledDocument doc = textPane.getStyledDocument();
-
-				try {
-					Style style = textPane.addStyle("Style", null);
-					if (SubType.equals("0")){
-						StyleConstants.setForeground(style, Color.blue);}
-					else{StyleConstants.setForeground(style, Color.red);}
-					doc.insertString(doc.getLength(), SubName + "   ", style);
-					StyleConstants.setForeground(style, Color.orange);
-					doc.insertString(doc.getLength(), " (" + SubPlaceName + ") ", style);
-
-					StyleConstants.setForeground(style, Color.gray);
-					doc.insertString(doc.getLength(), Verb +"  ", style); 
-				
-					if (ObjType.equals("0")){
-						StyleConstants.setForeground(style, Color.blue);}
-					else{StyleConstants.setForeground(style, Color.red);}
-					doc.insertString(doc.getLength(), ObjName, style);
-				
-					StyleConstants.setForeground(style, Color.orange);
-					doc.insertString(doc.getLength(), " (" + ObjPlaceName + ") \n", style);				
-				}	
-				catch (BadLocationException ex){}			
+		
+		JButton btnNewButton_5 = new JButton("New concurrence");
+		btnNewButton_5.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Concurrent concurrent = new Concurrent();
+				String[] args = new String[0];
+				concurrent.main(args);
 			}
-		}
-		catch(SQLException ex){System.out.print(ex);}
+		});
+		btnNewButton_5.setFont(new Font("Calibri", Font.PLAIN, 11));
+		btnNewButton_5.setBounds(26, 636, 121, 23);
+		frmTellMeA.getContentPane().add(btnNewButton_5);
+		
+		JButton btnNewButton_6 = new JButton("Update concurrence");
+		btnNewButton_6.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				UpdateConcurrence upd_concurrent = new UpdateConcurrence();
+				String[] args = new String[0];
+				upd_concurrent.main(args);
+			}
+		});
+		btnNewButton_6.setFont(new Font("Calibri", Font.PLAIN, 11));
+		btnNewButton_6.setBounds(26, 661, 129, 23);
+		frmTellMeA.getContentPane().add(btnNewButton_6);
+	
+	
+						
+		
 		
 	}
 	
