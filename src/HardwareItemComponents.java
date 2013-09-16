@@ -148,7 +148,7 @@ public class HardwareItemComponents extends JFrame{
 		DefaultComboBoxModel<comboItem> modelStateTo = new DefaultComboBoxModel(placeArray);
 	    comboBox = new JComboBox(model);		      
 	    comboBox.setBounds(126, 523, 89, 23);	    
-	    frame.add(comboBox, BorderLayout.SOUTH);	
+	    frame.getContentPane().add(comboBox, BorderLayout.SOUTH);	
 	    
 	    cbStateFrom = new JComboBox(model);
 	    cbStateTo = new JComboBox(modelStateTo);
@@ -220,7 +220,7 @@ public class HardwareItemComponents extends JFrame{
 		frame.getContentPane().add(lblComponents_1);
 		
 		JLabel lblStates = new JLabel("States:");
-		lblStates.setFont(new Font("Calibri", Font.BOLD, 11));
+		lblStates.setFont(new Font("Calibri", Font.BOLD, 12));
 		lblStates.setBounds(8, 84, 46, 14);
 		frame.getContentPane().add(lblStates);
 		

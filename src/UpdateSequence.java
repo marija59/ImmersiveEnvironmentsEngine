@@ -202,7 +202,6 @@ public class UpdateSequence {
 	private void initialize() {
 		frame = new JFrame();
 		frame.setBounds(100, 100, 433, 355);
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.getContentPane().setLayout(null);
 		
 		JLabel label = new JLabel("Sequence of controllable events:");
