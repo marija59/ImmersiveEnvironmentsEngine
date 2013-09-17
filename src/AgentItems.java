@@ -117,7 +117,7 @@ public class AgentItems {
 	private void initialize() {
 		frmAgentsItems = new JFrame();
 		frmAgentsItems.setTitle("Agent's items");
-		frmAgentsItems.setBounds(100, 100, 406, 502);
+		frmAgentsItems.setBounds(100, 100, 756, 502);
 		frmAgentsItems.getContentPane().setLayout(null);
 		
 		JLabel lblAgent = new JLabel("Agent");

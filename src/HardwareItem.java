@@ -27,6 +27,7 @@ public class HardwareItem {
 	
 	private void getDataTypes(){
 		try	{
+			cbType.setFont(new Font("Calibri", Font.PLAIN, 11));
 			cbType.removeAllItems();
 			ConnectDatabase cdb = new ConnectDatabase();        
 			String Query = "select iditems_types, ItemsTypesName from items_types";			
@@ -104,6 +105,7 @@ public class HardwareItem {
 		frmHardware.getContentPane().add(lblName);
 		
 		txtName = new JTextField();
+		txtName.setFont(new Font("Calibri", Font.PLAIN, 11));
 		txtName.setBounds(105, 37, 206, 20);
 		frmHardware.getContentPane().add(txtName);
 		txtName.setColumns(10);
@@ -114,6 +116,7 @@ public class HardwareItem {
 		frmHardware.getContentPane().add(lblDescription);
 		
 		final JTextArea txtDescription = new JTextArea();
+		txtDescription.setFont(new Font("Calibri", Font.PLAIN, 11));
 		txtDescription.setBounds(105, 72, 206, 74);
 		frmHardware.getContentPane().add(txtDescription);
 		
@@ -127,17 +130,17 @@ public class HardwareItem {
 		cbActuation.setBounds(6, 273, 138, 23);
 		frmHardware.getContentPane().add(cbActuation);
 		
-		JCheckBox cbSound = new JCheckBox("Sound");
+		final JCheckBox cbSound = new JCheckBox("Sound");
 		cbSound.setFont(new Font("Calibri", Font.PLAIN, 11));
 		cbSound.setBounds(6, 299, 97, 23);
 		frmHardware.getContentPane().add(cbSound);
 		
-		JCheckBox cbAnimation = new JCheckBox("Animations");
+		final JCheckBox cbAnimation = new JCheckBox("Animations");
 		cbAnimation.setFont(new Font("Calibri", Font.PLAIN, 11));
 		cbAnimation.setBounds(6, 325, 97, 23);
 		frmHardware.getContentPane().add(cbAnimation);
 		
-		JCheckBox cbLight = new JCheckBox("Light");
+		final JCheckBox cbLight = new JCheckBox("Light");
 		cbLight.setFont(new Font("Calibri", Font.PLAIN, 11));
 		cbLight.setBounds(6, 351, 97, 23);
 		frmHardware.getContentPane().add(cbLight);
@@ -216,6 +219,21 @@ public class HardwareItem {
 		            if (cbActuation.isSelected())
 		            {   
 		            	cdb.st.executeUpdate("INSERT INTO hardware_items_modalities (HardwareItemID, ModalityTypeID) VALUES (" + Integer.toString(((comboItem)cbItems.getSelectedItem()).value) + ", 1)");
+		            	System.out.println("1 row affected");
+			        }
+		            if (cbSound.isSelected())
+		            {   
+		            	cdb.st.executeUpdate("INSERT INTO hardware_items_modalities (HardwareItemID, ModalityTypeID) VALUES (" + Integer.toString(((comboItem)cbItems.getSelectedItem()).value) + ", 2)");
+		            	System.out.println("1 row affected");
+			        }
+		            if (cbLight.isSelected())
+		            {   
+		            	cdb.st.executeUpdate("INSERT INTO hardware_items_modalities (HardwareItemID, ModalityTypeID) VALUES (" + Integer.toString(((comboItem)cbItems.getSelectedItem()).value) + ", 3)");
+		            	System.out.println("1 row affected");
+			        }
+		            if (cbAnimation.isSelected())
+		            {   
+		            	cdb.st.executeUpdate("INSERT INTO hardware_items_modalities (HardwareItemID, ModalityTypeID) VALUES (" + Integer.toString(((comboItem)cbItems.getSelectedItem()).value) + ", 4)");
 		            	System.out.println("1 row affected");
 			        }
 				} catch (SQLException ex) {System.out.println("SQL statement is not executed!"+ex);}    

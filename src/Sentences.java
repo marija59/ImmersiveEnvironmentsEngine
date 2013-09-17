@@ -1,52 +1,29 @@
-import java.awt.BorderLayout;
-import java.awt.Container;
-import java.awt.EventQueue;
-
-import javax.swing.ComboBoxModel;
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JScrollPane;
-
 import java.awt.Color;
-
+import java.awt.EventQueue;
 import javax.swing.JButton;
-
 import java.awt.Font;
-
 import javax.swing.JComboBox;
 import javax.swing.JTextPane;
-import javax.swing.event.ListDataListener;
-
 import java.sql.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.util.ArrayList;
-import java.util.List;
-
 import javax.swing.text.BadLocationException;
-import javax.swing.text.DefaultStyledDocument;
-import javax.swing.text.Document;
-import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
-import javax.swing.text.StyleContext;
 import javax.swing.text.StyledDocument;
 import javax.swing.ButtonGroup;
-import javax.swing.DefaultComboBoxModel;
-import javax.swing.JEditorPane;
 import javax.swing.JOptionPane;
-import javax.swing.JTextArea;
 import javax.swing.JRadioButton;
 import javax.swing.JSeparator;
-import javax.swing.JToggleButton;
-import javax.swing.JSplitPane;
 import javax.swing.JTextField;
+import javax.swing.JTree;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.DefaultMutableTreeNode;
 
 class comboItem  
 {  
@@ -62,11 +39,11 @@ class comboItem
 public class Sentences {
 
 	private JFrame frmTellMeA;	
-	JComboBox cbSubject = new JComboBox();
-	JComboBox cbVerb = new JComboBox();
-	JComboBox cbObject = new JComboBox();
-	JComboBox cbLocation = new JComboBox();
-	JComboBox cbLocationObject = new JComboBox();	
+	JComboBox<comboItem> cbSubject = new JComboBox<comboItem>();
+	JComboBox<comboItem> cbVerb = new JComboBox<comboItem>();
+	JComboBox<comboItem> cbObject = new JComboBox<comboItem>();
+	JComboBox<comboItem> cbLocation = new JComboBox<comboItem>();
+	JComboBox<comboItem> cbLocationObject = new JComboBox<comboItem>();	
 	JTextPane textPane = new JTextPane();
 	private JTextField txtSubjectName;
 	private JTextField txtPlaceName;
@@ -75,69 +52,135 @@ public class Sentences {
 	private JTextField txtConName;
 	private int TypeSub=3;
 	private int TypeEvent=3;
+	private DynamicTree treePanelHardwareItems;
+	
+	private void populateTree(DynamicTree treePanel) {
+        DefaultMutableTreeNode p1;
+        treePanel.clear();
+        ConnectDatabase cdb = new ConnectDatabase();
+        ConnectDatabase cdb2 = new ConnectDatabase();
+        ConnectDatabase cdb3 = new ConnectDatabase(); 
+		//int StoryID = 1; //((comboItem)cbSequences.getSelectedItem()).value;
+		String Query = "select * from " 
+					+ " ( SELECT story_chronology.idstory_chronology as id, idSentences as SenConcID, concat(subjects.SubjectName, places.PlaceName, events.EventName, IFNULL(o.SubjectName, ''),  IFNULL(po.PlaceName, '')) as NameEvSeq, 1 as Type" 
+					+ " from sentences left join subjects on sentences.SubjectID = subjects.idsubjects " 
+					+ " left join subjects o on sentences.ObjectID = o.idsubjects " 
+					+ " left join events  on sentences.VerbID = events.idevents " 
+					+ " left join places on sentences.LocationID = places.idplaces " 
+					+ " left join places po on sentences.LocationObjectID = po.idplaces " 
+					+ " join story_chronology on story_chronology.EventSeqConID = sentences.idSentences and story_chronology.EventSeqConTypeID = 1 "
+					+ " union " 
+					+ " select story_chronology.idstory_chronology as id, idsequence as SenConcID, NameSeq as NameEvSeq, 3 as Type " 
+					+ " from sequences join story_chronology on story_chronology.EventSeqConID = sequences.idsequence and story_chronology.EventSeqConTypeID = 3 "
+					+ " union "
+					+ " select story_chronology.idstory_chronology as id, idconcurrences as SenConcID, NameConc as NameEvSeq, 2 as Type " 
+					+ " from concurrences join story_chronology on story_chronology.EventSeqConID = concurrences.idconcurrences and story_chronology.EventSeqConTypeID = 2"
+					+ " ) as results "
+					+ " order by id";
+		System.out.println(Query);
+		try	{
+			ResultSet result = cdb.st.executeQuery(Query);			  			  
+			String NameEvSeq, SenSeqConID, Type;
+			
+			while(result.next()) {
+				NameEvSeq = result.getString("NameEvSeq");	
+				SenSeqConID = result.getString("SenConcID");
+				Type = result.getString("Type");
+				System.out.println("result 1 query 1");
+				p1 = treePanel.addObject(null, NameEvSeq);
+				if (Type.equals("3")){
+					
+					String QuerySeq = "select * from "
+								+ " ( SELECT seq_events.idseq_events as id, subjects.SubjectTypesID, concat(subjects.SubjectName, places.PlaceName, events.EventName, IFNULL(o.SubjectName, ''),  IFNULL(po.PlaceName, '')) as NameEvSeq, seq_events.Time  as SeqTime"  
+								+ " from sequences 	join seq_events on sequences.idsequence = seq_events.SequenceID "  
+								+ " left join sentences on sentences.idSentences = seq_events.EventConID " 	
+								+ " left join subjects on sentences.SubjectID = subjects.idsubjects "  
+								+ " left join subjects o on sentences.ObjectID = o.idsubjects "  
+								+ " left join events  on sentences.VerbID = events.idevents "  
+								+ " left join places on sentences.LocationID = places.idplaces "  
+								+ " left join places po on sentences.LocationObjectID = po.idplaces "   
+								+ " where sequences.idsequence = " + SenSeqConID +  " and seq_events.TypeID = 1 " 
+								+ " union " 
+								+ " select seq_events.idseq_events as id, 3 as SybjectTypesID, concurrences.NameConc as NameEvSeq,  seq_events.Time  as SeqTime "
+								+ " from sequences 	join seq_events on sequences.idsequence = seq_events.SequenceID "  
+								+ " join concurrences on concurrences.idconcurrences = seq_events.EventConID "
+								+ " where sequences.idsequence =  " + SenSeqConID +  " and seq_events.TypeID = 2 ) as result "
+								+ " order by id ";
+					ResultSet resultSeq = cdb2.st.executeQuery(QuerySeq);			  			  
+					String NameSeq;						
+					while(resultSeq.next()) {
+						NameSeq = resultSeq.getString("NameEvSeq");	
+						//SenSeqConID = result.getString("SenConcID");
+						//Type = result.getString("Type");
+						treePanel.addObject(p1, NameSeq);
+					}
+				}	
+				if (Type.equals("2")){
+					
+					String QueryConc = "select * from "
+							+ " ( SELECT concurr_events.idconcurr_events as id, subjects.SubjectTypesID, concat(subjects.SubjectName, places.PlaceName, events.EventName, IFNULL(o.SubjectName, ''),  IFNULL(po.PlaceName, '')) as NameEvSeq "
+							+ " from concurrences 	join concurr_events on concurrences.idconcurrences = concurr_events.ConcurrenceID " 
+							+ " left join sentences on sentences.idSentences = concurr_events.EventConID " 
+							+ " left join subjects on sentences.SubjectID = subjects.idsubjects " 
+							+ " left join subjects o on sentences.ObjectID = o.idsubjects " 
+							+ " left join events  on sentences.VerbID = events.idevents " 
+							+ " left join places on sentences.LocationID = places.idplaces " 
+							+ " left join places po on sentences.LocationObjectID = po.idplaces " 
+							+ " where concurrences.idconcurrences = " + SenSeqConID +  " and concurr_events.EventConTypeID = 1 " 
+							+ " union " 
+							+ " select concurr_events.idconcurr_events as id, 3 as SybjectTypesID, sequences.NameSeq as NameEvSeq" 
+							+ " from concurrences 	join concurr_events on concurrences.idconcurrences = concurr_events.ConcurrenceID " 
+							+ " join sequences on sequences.idsequence = concurr_events.EventConID " 
+							+ " where concurrences.idconcurrences =  " + SenSeqConID +  " and concurr_events.EventConTypeID = 3) as result " 
+							+ " order by id ";
+					System.out.println(QueryConc);
+					ResultSet resultCon = cdb3.st.executeQuery(QueryConc);			  			  
+					String NameCon;						
+					while(resultCon.next()) {
+						NameCon = resultCon.getString("NameEvSeq");	
+						//SenSeqConID = result.getString("SenConcID");
+						//Type = result.getString("Type");
+						treePanel.addObject(p1, NameCon);
+					}
+				}	
+			}
+			treePanel.expand();
+		}
+		catch(SQLException ex){System.out.print(ex);}
+    }
 	
 	
 	private void getData(){
 		try {			  
-			  cbSubject.setFont(new Font("Calibri", Font.PLAIN, 11));
 			  cbSubject.removeAllItems();
-			  cbObject.setFont(new Font("Calibri", Font.PLAIN, 11));
-			  cbObject.removeAllItems();			 
-			  cbVerb.setFont(new Font("Calibri", Font.PLAIN, 11));
+			  cbObject.removeAllItems();
 			  cbVerb.removeAllItems();
-			  cbLocation.setFont(new Font("Calibri", Font.PLAIN, 11));
 			  cbLocation.removeAllItems();
 			  cbLocationObject.removeAllItems();
 			  			  
 			  ConnectDatabase cdb = new ConnectDatabase();
 		        
 		      ResultSet result = cdb.st.executeQuery("SELECT idsubjects, SubjectName FROM subjects");
-		      List<comboItem> subjects = new ArrayList<comboItem>();
-		      String s = "";
-		      int id = -1;	
-		      comboItem cItem = new comboItem(s, id);
-		      cbSubject.addItem(cItem);
-		      cbObject.addItem(cItem);
-		 	  while(result.next()) { 		        		       
-		        s = result.getString("SubjectName");
-		        id = result.getInt("idsubjects");		        
-		        cItem = new comboItem(s, id);
-		        cbSubject.addItem(cItem);
-		        cbObject.addItem(cItem);
+		      cbSubject.addItem(new comboItem("", -1));
+		      cbObject.addItem(new comboItem("", -1));
+		 	  while(result.next()) {		        
+		        cbSubject.addItem(new comboItem(result.getString("SubjectName"), result.getInt("idsubjects")));
+		        cbObject.addItem(new comboItem(result.getString("SubjectName"), result.getInt("idsubjects")));
 		      }
 		 	 		      		      
-		      result = cdb.st.executeQuery("SELECT idevents, EventName FROM events");		      
-		      List<comboItem> events = new ArrayList<comboItem>();
-		      s = "";
-		      id = -1;	
-		      cItem = new comboItem(s, id);
-		      cbVerb.addItem(cItem);
-			  while(result.next()) { // process results one row at a time		        		       
-		        s = result.getString("EventName");
-		        id = result.getInt("idevents");		        
-		        cItem = new comboItem(s, id);
-		        cbVerb.addItem(cItem);
-		      }			  
-			  //comboItem [] eventArray = events.toArray( new comboItem[events.size()]);
-			  //cbVerb = new JComboBox(eventArray);			  
+		      result = cdb.st.executeQuery("SELECT idevents, EventName FROM events");
+		      cbVerb.addItem(new comboItem("", -1));
+			  while(result.next()) { 
+		        cbVerb.addItem(new comboItem(result.getString("EventName"), result.getInt("idevents")));
+		      }	  
 
 			  result = cdb.st.executeQuery("SELECT idplaces, PlaceName FROM places");
-			  List<comboItem> places = new ArrayList<comboItem>();
-			  s = "";
-		      id = -1;	
-		      cItem = new comboItem(s, id);
-		      cbLocation.addItem(cItem);
-		      cbLocationObject.addItem(cItem);
-			  while(result.next()) { // process results one row at a time		        		       
-		        s = result.getString("PlaceName");
-		        id = result.getInt("idplaces");
-		        cItem = new comboItem(s, id);
-		        cbLocation.addItem(cItem);
-		        cbLocationObject.addItem(cItem);
-		      }
-			  //comboItem [] placeArray = places.toArray( new comboItem[places.size()]);
-			  //cbLocation = new JComboBox(placeArray);			  
-			  //cbLocationObject = new JComboBox(placeArray);			  
+		      cbLocation.addItem(new comboItem("", -1));
+		      cbLocationObject.addItem(new comboItem("", -1));
+			  while(result.next()) {
+		        cbLocation.addItem(new comboItem(result.getString("PlaceName"), result.getInt("idplaces")));
+		        cbLocationObject.addItem(new comboItem(result.getString("PlaceName"), result.getInt("idplaces")));
+		      }		  
 		      cdb.st.close();	
 		    }
 		    catch( Exception e ) {
@@ -210,15 +253,7 @@ public class Sentences {
 	 * Create the application.
 	 */
 	public Sentences() {		
-		initialize();		
-//		GetDataSentences gds = new GetDataSentences();
-//		gds.getData();
-//		System.out.println(gds.subjectArray[2].name);
-//		DefaultComboBoxModel<comboItem> modelComp = new DefaultComboBoxModel<comboItem>(gds.subjectArray);
-//		cbSubject = new JComboBox<comboItem>(modelComp);
-//		cbSubject.setBounds(6, 97, 145, 20);
-//		frmTellMeA.getContentPane().add(cbSubject);
-//		
+		initialize();
 		getData();
 	}
 
@@ -229,15 +264,7 @@ public class Sentences {
 		System.out.println("INIT 1");
 		frmTellMeA = new JFrame();		
 		frmTellMeA.setTitle("Tell me a story!");
-		frmTellMeA.addWindowListener(new WindowAdapter() {
-			@Override
-			public void windowActivated(WindowEvent arg0) {
-				//getData();
-			}
-		});
-		
-		//frmTellMeA.getContentPane().setBackground(Color.GRAY);
-		frmTellMeA.setBounds(100, 100, 1155, 598);
+		frmTellMeA.setBounds(100, 100, 1295, 598);
 		frmTellMeA.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frmTellMeA.getContentPane().setLayout(null);
 		
@@ -251,9 +278,8 @@ public class Sentences {
 		button.setFont(new Font("Calibri", Font.PLAIN, 11));
 		button.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				DefineSubject defSubject = new DefineSubject();		
 				String[] args = new String[0];
-				defSubject.main(args);
+				DefineSubject.main(args);
 				getData();
 			}
 		});		
@@ -270,9 +296,8 @@ public class Sentences {
 		button_1.setFont(new Font("Calibri", Font.PLAIN, 11));
 		button_1.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				DefinePlace defPlace = new DefinePlace();		
 				String[] args = new String[0];
-				defPlace.main(args);
+				DefinePlace.main(args);
 				getData();
 			}
 		});
@@ -289,9 +314,8 @@ public class Sentences {
 		button_2.setFont(new Font("Calibri", Font.PLAIN, 11));
 		button_2.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				DefineEvent defEvent = new DefineEvent();		
 				String[] args = new String[0];
-				defEvent.main(args);
+				DefineEvent.main(args);
 				getData();
 			}
 		});
@@ -320,12 +344,15 @@ public class Sentences {
 		label_5.setBounds(171, 90, 46, 14);
 		frmTellMeA.getContentPane().add(label_5);
 		
+		cbSubject.setFont(new Font("Calibri", Font.PLAIN, 11));
 		cbSubject.setBounds(6, 116, 145, 20);
 		frmTellMeA.getContentPane().add(cbSubject);
 						
+		cbVerb.setFont(new Font("Calibri", Font.PLAIN, 11));
 		cbVerb.setBounds(171, 116, 145, 20);
 		frmTellMeA.getContentPane().add(cbVerb);
-						
+		
+		cbObject.setFont(new Font("Calibri", Font.PLAIN, 11));
 		cbObject.setBounds(336, 116, 141, 20);
 		frmTellMeA.getContentPane().add(cbObject);
 		
@@ -340,10 +367,10 @@ public class Sentences {
 		label_7.setForeground(Color.BLACK);
 		label_7.setBounds(6, 138, 46, 14);
 		frmTellMeA.getContentPane().add(label_7);
-				
-		cbLocation.setBounds(6, 156, 145, 20);
-		frmTellMeA.getContentPane().add(cbLocation);
 		
+		cbLocation.setFont(new Font("Calibri", Font.PLAIN, 11));
+		cbLocation.setBounds(6, 156, 145, 20);
+		frmTellMeA.getContentPane().add(cbLocation);		
 		
 		textPane.setFont(new Font("Calibri", Font.PLAIN, 11));
 		textPane.setEditable(false);
@@ -364,7 +391,7 @@ public class Sentences {
 		        int LocationID = ((comboItem)cbLocation.getSelectedItem()).value;
 		        int LocationObjectID = ((comboItem)cbLocationObject.getSelectedItem()).value;
 		        try {
-		            int val = cdb.st.executeUpdate("INSERT INTO sentences (SubjectID, VerbID, ObjectID, LocationID, LocationObjectID) VALUES ("+Integer.toString(SubjectID)+","+Integer.toString(VerbID)+","+Integer.toString(ObjectID)+","+Integer.toString(LocationID)+","+Integer.toString(LocationObjectID)+")");
+		            cdb.st.executeUpdate("INSERT INTO sentences (SubjectID, VerbID, ObjectID, LocationID, LocationObjectID) VALUES ("+Integer.toString(SubjectID)+","+Integer.toString(VerbID)+","+Integer.toString(ObjectID)+","+Integer.toString(LocationID)+","+Integer.toString(LocationObjectID)+")");
 		            System.out.println("1 row affected");		           
 		        } catch (SQLException ex) {
 		        	System.out.println("SQL statement is not executed!"+ex);
@@ -390,9 +417,8 @@ public class Sentences {
 		btnNewButton.setFont(new Font("Calibri", Font.PLAIN, 11));
 		btnNewButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				Time time = new Time();		
 				String[] args = new String[0];
-				time.main(args);
+				Time.main(args);
 			}
 		});
 		btnNewButton.setBounds(257, 611, 121, 23);
@@ -402,9 +428,8 @@ public class Sentences {
 		btnNewButton_1.setFont(new Font("Calibri", Font.PLAIN, 11));
 		btnNewButton_1.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				Agents events = new Agents();		
 				String[] args = new String[0];
-				events.main(args);
+				Agents.main(args);
 			}
 		});
 		btnNewButton_1.setBounds(657, 329, 104, 23);
@@ -413,9 +438,8 @@ public class Sentences {
 		JButton btnNewButton_2 = new JButton("Define agent");
 		btnNewButton_2.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				AgentItems agentItems = new AgentItems();		
 				String[] args = new String[0];
-				agentItems.main(args);
+				AgentItems.main(args);
 			}
 		});
 		btnNewButton_2.setFont(new Font("Calibri", Font.PLAIN, 11));
@@ -449,9 +473,8 @@ public class Sentences {
 		JButton btnCreateSequence = new JButton("New sequence");
 		btnCreateSequence.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				Sequence sequence = new Sequence();
 				String[] args = new String[0];
-				sequence.main(args);
+				Sequence.main(args);
 			}
 		});
 		btnCreateSequence.setFont(new Font("Calibri", Font.PLAIN, 11));
@@ -461,9 +484,8 @@ public class Sentences {
 		JButton btnNewButton_4 = new JButton("Define seq");
 		btnNewButton_4.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				UpdateSequence upd_sequence = new UpdateSequence();
 				String[] args = new String[0];
-				upd_sequence.main(args);
+				UpdateSequence.main(args);
 			}
 		});
 		btnNewButton_4.setFont(new Font("Calibri", Font.PLAIN, 11));
@@ -473,9 +495,8 @@ public class Sentences {
 		JButton btnNewButton_5 = new JButton("New concurrence");
 		btnNewButton_5.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				Concurrent concurrent = new Concurrent();
 				String[] args = new String[0];
-				concurrent.main(args);
+				Concurrent.main(args);
 			}
 		});
 		btnNewButton_5.setFont(new Font("Calibri", Font.PLAIN, 11));
@@ -485,9 +506,8 @@ public class Sentences {
 		JButton btnNewButton_6 = new JButton("Define conc");
 		btnNewButton_6.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				UpdateConcurrence upd_concurrent = new UpdateConcurrence();
 				String[] args = new String[0];
-				upd_concurrent.main(args);
+				UpdateConcurrence.main(args);
 			}
 		});
 		btnNewButton_6.setFont(new Font("Calibri", Font.PLAIN, 11));
@@ -559,7 +579,7 @@ public class Sentences {
 						ConnectDatabase cdb = new ConnectDatabase();
 						System.out.println("After Connect Database!");		        
 						try {
-							int val = cdb.st.executeUpdate("INSERT INTO subjects (SubjectName, SubjectTypesID) VALUES ('"+txtSubjectName.getText()+"',"+TypeSub+")");
+							cdb.st.executeUpdate("INSERT INTO subjects (SubjectName, SubjectTypesID) VALUES ('"+txtSubjectName.getText()+"',"+TypeSub+")");
 							System.out.println("1 row affected");		           
 						} catch (SQLException ex) {
 							System.out.println("SQL statement is not executed!"+ex);
@@ -594,7 +614,7 @@ public class Sentences {
 					ConnectDatabase cdb = new ConnectDatabase();
 					System.out.println("After Connect Database!");
 					try {
-						int val = cdb.st.executeUpdate("INSERT INTO places (PlaceName) VALUES ('"+txtPlaceName.getText()+"')");
+						cdb.st.executeUpdate("INSERT INTO places (PlaceName) VALUES ('"+txtPlaceName.getText()+"')");
 						System.out.println("1 row affected");		           
 					} catch (SQLException ex) {
 						System.out.println("SQL statement is not executed!"+ex);
@@ -678,7 +698,7 @@ public class Sentences {
 						ConnectDatabase cdb = new ConnectDatabase();
 						System.out.println("After Connect Database!");
 						try {
-							int val = cdb.st.executeUpdate("INSERT INTO events (EventName, EventTypesID) VALUES ('"+txtEventName.getText()+"',"+TypeEvent+")");
+							cdb.st.executeUpdate("INSERT INTO events (EventName, EventTypesID) VALUES ('"+txtEventName.getText()+"',"+TypeEvent+")");
 							System.out.println("1 row affected");		           
 						} catch (SQLException ex) {
 							System.out.println("SQL statement is not executed!"+ex);
@@ -723,7 +743,7 @@ public class Sentences {
 					System.out.println("After Connect Database!");
 					int EventID = -1; //((comboItem)cbTriggerEvent.getSelectedItem()).value;		     
 					try {
-						int val = cdb.st.executeUpdate("INSERT INTO sequences (NameSeq, TriggeredByEvent) VALUES ('"+txtSeqName.getText()+"',"+Integer.toString(EventID)+")");
+						cdb.st.executeUpdate("INSERT INTO sequences (NameSeq, TriggeredByEvent) VALUES ('"+txtSeqName.getText()+"',"+Integer.toString(EventID)+")");
 						System.out.println("1 row affected");		           
 					} catch (SQLException ex) {
 						System.out.println("SQL statement is not executed!"+ex);
@@ -737,9 +757,9 @@ public class Sentences {
 		btnAddSequence.setBounds(764, 434, 92, 23);
 		frmTellMeA.getContentPane().add(btnAddSequence);
 		
-		JLabel lblSequence = new JLabel("Sequence");
+		JLabel lblSequence = new JLabel("Coupling of events in a sequence");
 		lblSequence.setFont(new Font("Calibri", Font.BOLD, 11));
-		lblSequence.setBounds(505, 384, 66, 14);
+		lblSequence.setBounds(505, 384, 155, 14);
 		frmTellMeA.getContentPane().add(lblSequence);
 		
 		JLabel label_16 = new JLabel("Name");
@@ -761,7 +781,7 @@ public class Sentences {
 					System.out.println("After Connect Database!");
 					int EventID = -1; //((comboItem)cbTriggerEvent.getSelectedItem()).value;		     
 					try {
-						int val = cdb.st.executeUpdate("INSERT INTO concurrences (NameConc, TriggeredByEvent) VALUES ('"+txtConName.getText()+"',"+Integer.toString(EventID)+")");
+						cdb.st.executeUpdate("INSERT INTO concurrences (NameConc, TriggeredByEvent) VALUES ('"+txtConName.getText()+"',"+Integer.toString(EventID)+")");
 						System.out.println("1 row affected");		           
 					} catch (SQLException ex) {
 						System.out.println("SQL statement is not executed!"+ex);
@@ -775,9 +795,9 @@ public class Sentences {
 		btnAddCon.setBounds(764, 516, 92, 23);
 		frmTellMeA.getContentPane().add(btnAddCon);
 		
-		JLabel lblNewLabel_1 = new JLabel("Concurrence");
+		JLabel lblNewLabel_1 = new JLabel("Agents acting together ");
 		lblNewLabel_1.setFont(new Font("Calibri", Font.BOLD, 11));
-		lblNewLabel_1.setBounds(505, 465, 66, 14);
+		lblNewLabel_1.setBounds(505, 465, 143, 14);
 		frmTellMeA.getContentPane().add(lblNewLabel_1);
 		
 		JLabel lblNewLabel_2 = new JLabel("Title:");
@@ -796,14 +816,62 @@ public class Sentences {
 		JButton btnNewButton_7 = new JButton("Add Item");
 		btnNewButton_7.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				HardwareItem hardItem = new HardwareItem();
 				String[] args = new String[0];
-				hardItem.main(args);
+				HardwareItem.main(args);
 			}
 		});
 		btnNewButton_7.setFont(new Font("Calibri", Font.PLAIN, 11));
-		btnNewButton_7.setBounds(764, 62, 89, 23);
+		btnNewButton_7.setBounds(890, 380, 89, 23);
 		frmTellMeA.getContentPane().add(btnNewButton_7);
+		
+		JLabel lblNewLabel_3 = new JLabel("Define hardware and software items");
+		lblNewLabel_3.setFont(new Font("Calibri", Font.BOLD, 11));
+		lblNewLabel_3.setBounds(880, 8, 233, 14);
+		frmTellMeA.getContentPane().add(lblNewLabel_3);
+		
+		JButton btnNewButton_8 = new JButton("Define Item");
+		btnNewButton_8.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				String[] args = new String[0];
+				HardwareItemComponents.main(args);
+			}
+		});
+		btnNewButton_8.setFont(new Font("Calibri", Font.PLAIN, 11));
+		btnNewButton_8.setBounds(989, 380, 89, 23);
+		frmTellMeA.getContentPane().add(btnNewButton_8);
+		
+		JSeparator separator_5 = new JSeparator();
+		separator_5.setBounds(890, 360, 369, 2);
+		frmTellMeA.getContentPane().add(separator_5);
+		
+		JTree tree = new JTree();
+		tree.setFont(new Font("Calibri", Font.PLAIN, 11));
+		tree.setModel(new DefaultTreeModel(
+			new DefaultMutableTreeNode("JTree") {
+				/**
+				 * 
+				 */
+				private static final long serialVersionUID = 7065875025224153434L;
+
+				{
+				}
+			}
+		));
+		tree.setBounds(890, 31, 369, 321);
+		frmTellMeA.getContentPane().add(tree);
+		
+		treePanelHardwareItems = new DynamicTree();		
+		treePanelHardwareItems.setBounds(6, 227, 471, 295);
+		frmTellMeA.getContentPane().add(treePanelHardwareItems);
+		
+		JButton btnChronology = new JButton("Chronology");
+		btnChronology.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {				
+				populateTree(treePanelHardwareItems);
+			}
+		});
+		btnChronology.setBounds(6, 526, 89, 23);
+		frmTellMeA.getContentPane().add(btnChronology);
 	
 	
 						

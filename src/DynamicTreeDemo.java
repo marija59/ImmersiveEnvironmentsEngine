@@ -93,11 +93,6 @@ public class DynamicTreeDemo extends JPanel
     }
 
     public void populateTree(DynamicTree treePanel) {
-        String p1Name = new String("Parent 1");
-        String p2Name = new String("Parent 2");
-        String c1Name = new String("Child 1");
-        String c2Name = new String("Child 2");
-        
         DefaultMutableTreeNode p1, p2;
         
         ConnectDatabase cdb = new ConnectDatabase();
@@ -187,19 +182,9 @@ public class DynamicTreeDemo extends JPanel
 					}
 				}	
 			}
+			treePanel.expand();
 		}
 		catch(SQLException ex){System.out.print(ex);}
-
-        
-
-        //p1 = treePanel.addObject(null, p1Name);
-        //p2 = treePanel.addObject(null, p2Name);
-
-        //treePanel.addObject(p1, c1Name);
-        //treePanel.addObject(p1, c2Name);
-
-        //treePanel.addObject(p2, c1Name);
-        //treePanel.addObject(p2, c2Name);
     }
     
     public void actionPerformed(ActionEvent e) {

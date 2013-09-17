@@ -36,8 +36,10 @@
  * a tutorial reader.
  */
 
+import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.Toolkit;
+
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTree;
@@ -66,9 +68,16 @@ public class DynamicTree extends JPanel {
         tree.getSelectionModel().setSelectionMode
                 (TreeSelectionModel.SINGLE_TREE_SELECTION);
         tree.setShowsRootHandles(true);
+        tree.setFont(new Font("Calibri", Font.PLAIN, 11));
 
         JScrollPane scrollPane = new JScrollPane(tree);
         add(scrollPane);
+    }
+    
+    public void expand(){
+    	for (int i = 0; i < tree.getRowCount(); i++) {
+            tree.expandRow(i);
+    	}
     }
 
     /** Remove all nodes except the root node. */

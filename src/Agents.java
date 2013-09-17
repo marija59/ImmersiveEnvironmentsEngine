@@ -5,8 +5,6 @@ import java.awt.event.ItemListener;
 import java.awt.event.ItemEvent;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 import javax.swing.JLabel;
 import java.awt.Font;
 import javax.swing.JCheckBox;
