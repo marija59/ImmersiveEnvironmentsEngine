@@ -142,7 +142,7 @@ public class UpdateSequence {
 			    sentences.add(cItem);	
 			}
 			comboItemSeq [] sentenceArray = sentences.toArray( new comboItemSeq[sentences.size()]);	
-			System.out.println(sentenceArray[5]);
+			
 			cbEvents = new JComboBox(sentenceArray);
 			cbEvents.setFont(new Font("Calibri", Font.PLAIN, 11));
 		}

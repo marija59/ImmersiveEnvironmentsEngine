@@ -1,4 +1,5 @@
 import java.awt.EventQueue;
+import java.awt.Image;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -10,10 +11,13 @@ import javax.swing.JComboBox;
 import javax.swing.JButton;
 import javax.swing.text.BadLocationException;
 import javax.swing.DefaultComboBoxModel;
+
 import java.awt.event.ItemListener;
 import java.awt.event.ItemEvent;
 import java.awt.Font;
+
 import javax.swing.JTree;
+
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 
@@ -222,8 +226,5 @@ public class Time {
 		btnAddSeqcon.setBounds(33, 261, 108, 23);
 		frmOnceUponA.getContentPane().add(btnAddSeqcon);
 		
-		JTree tree = new JTree();
-		tree.setBounds(265, 228, 314, 170);
-		frmOnceUponA.getContentPane().add(tree);
 	}
 }

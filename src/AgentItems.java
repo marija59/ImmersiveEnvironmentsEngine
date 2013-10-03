@@ -5,8 +5,9 @@ import java.sql.SQLException;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JComboBox;
-import javax.swing.JTree;
 import javax.swing.JButton;
+import javax.swing.tree.DefaultMutableTreeNode;
+
 import java.awt.event.ItemListener;
 import java.awt.event.ItemEvent;
 import java.awt.Font;
@@ -21,6 +22,45 @@ public class AgentItems {
 	JComboBox<comboItem> cbItems = new JComboBox<comboItem>();
 	JComboBox<comboItem> cbAgentModality = new JComboBox<comboItem>();
 	int flagForItems = 0;
+	private DynamicTree treePanelHardwareItems;
+	
+	private void populateTreeAgents(DynamicTree treePanel) {
+        DefaultMutableTreeNode p1, p2;
+        treePanel.clear();
+        if (cbAgent.getSelectedItem() != null){
+        	ConnectDatabase cdb = new ConnectDatabase();
+        	ConnectDatabase cdb2 = new ConnectDatabase();
+        	ConnectDatabase cdb3 = new ConnectDatabase();
+        	ResultSet result, resultComp, resultMod;
+        	String Query, QueryComp, QueryMod;
+        	try	{
+        		Query = "select idsubjects, SubjectName from subjects where idsubjects = "  + Integer.toString(((comboItem)cbAgent.getSelectedItem()).value);
+        		result = cdb.st.executeQuery(Query);
+        		while(result.next()) {
+					p1 = treePanel.addObject(null, result.getString("SubjectName"));
+					QueryComp = "select mt.ModalityTypeName, mt.idmodality_types from agent_modalities am "
+							+ " join modality_types mt on mt.idmodality_types = am.ModalityTypeID where am.AgentID = " + Integer.toString(((comboItem)cbAgent.getSelectedItem()).value);
+					resultComp = cdb2.st.executeQuery(QueryComp);
+					while(resultComp.next()) {
+						p2 = treePanel.addObject(p1, resultComp.getString("mt.ModalityTypeName"));
+						QueryMod = "select hi.Name from agent_items ai join hardware_items hi on ai.ItemID = hi.idhardware_items "
+								+ " join hardware_items_modalities him on him.HardwareItemID = ai.ItemID "
+								+ " where ai.AgentID = "  + Integer.toString(((comboItem)cbAgent.getSelectedItem()).value) + " and him.ModalityTypeID = " + resultComp.getString("mt.idmodality_types");
+						System.out.println(QueryMod);
+						resultMod = cdb3.st.executeQuery(QueryMod);
+						while(resultMod.next()) {
+							treePanel.addObject(p2, resultMod.getString("hi.Name"));
+						}						
+					}
+        		}
+        		cdb.st.close();
+        		cdb2.st.close();
+        		cdb3.st.close();	
+        		treePanel.expand();
+        	}
+        	catch(SQLException ex){System.out.print(ex);}
+        }
+    }
 	
 	private void getDataAgents(){		
 		try	{			
@@ -40,7 +80,8 @@ public class AgentItems {
 				AgentName = result.getString("subjects.SubjectName");				
 				System.out.println(AgentName);				
 				cbAgent.addItem(new comboItem(AgentName, Integer.parseInt(AgentID)));
-			}	
+			}
+			cdb.st.close();
 		}
 		catch(SQLException ex){System.out.print(ex);}	
 	}
@@ -60,7 +101,7 @@ public class AgentItems {
 				ModalityTypeName = result.getString("modality_types.ModalityTypeName");
 				cbAgentModality.addItem(new comboItem(ModalityTypeName, Integer.parseInt(ModalityTypeID)));
 			}	
-			
+			cdb.st.close();
 		}
 		catch(SQLException ex){System.out.print(ex);}	
 	}
@@ -81,8 +122,9 @@ public class AgentItems {
 					HardwareItemID = result.getString("hi.idhardware_items");							
 					HardwareItemName = result.getString("hi.Name");
 					cbItems.addItem(new comboItem(HardwareItemName, Integer.parseInt(HardwareItemID)));
-				}	
-			}
+				}
+				cdb.st.close();
+			}			
 		}
 		catch(SQLException ex){System.out.print(ex);}	
 	}
@@ -142,9 +184,13 @@ public class AgentItems {
 		cbItems.setBounds(93, 76, 289, 20);
 		frmAgentsItems.getContentPane().add(cbItems);
 		
-		JTree tree = new JTree();
-		tree.setBounds(10, 151, 372, 302);
-		frmAgentsItems.getContentPane().add(tree);
+//		JTree tree = new JTree();
+//		tree.setBounds(10, 151, 372, 302);
+//		frmAgentsItems.getContentPane().add(tree);
+		
+		treePanelHardwareItems = new DynamicTree();		
+		treePanelHardwareItems.setBounds(10, 151, 372, 302);
+		frmAgentsItems.getContentPane().add(treePanelHardwareItems);
 		
 		JButton btnAddItem = new JButton("Add Item");
 		btnAddItem.addActionListener(new ActionListener() {
@@ -171,6 +217,7 @@ public class AgentItems {
 			public void itemStateChanged(ItemEvent e) {
 				System.out.println("modal");
 				getDataForSelectedModality();
+				populateTreeAgents(treePanelHardwareItems);
 			}
 		});
 				

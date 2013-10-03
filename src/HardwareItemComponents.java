@@ -444,6 +444,7 @@ public class HardwareItemComponents extends JFrame{
 		        	System.out.println("SQL statement is not executed!"+ex);
 		        }
 		        getData();
+		        populateTreeHardwareItems(treePanelHardwareItems);
 			}
 		});
 		btnNewButton.setFont(new Font("Calibri", Font.PLAIN, 11));

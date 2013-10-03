@@ -244,12 +244,12 @@ public class Agents {
 		cbEvents.setFont(new Font("Calibri", Font.PLAIN, 11));
 		frmDefineRelationAgentprops.getContentPane().add(cbEvents);
 		
-		JCheckBox cbInformation = new JCheckBox("Information");
+		JCheckBox cbInformation = new JCheckBox("Subscribe to info");
 		cbInformation.setFont(new Font("Calibri", Font.PLAIN, 11));
-		cbInformation.setBounds(217, 351, 97, 23);
+		cbInformation.setBounds(217, 351, 125, 23);
 		frmDefineRelationAgentprops.getContentPane().add(cbInformation);
 		
-		JCheckBox chckbxInformation = new JCheckBox("Information");
+		JCheckBox chckbxInformation = new JCheckBox("Publish info");
 		chckbxInformation.setFont(new Font("Calibri", Font.PLAIN, 11));
 		chckbxInformation.setBounds(26, 380, 97, 23);
 		frmDefineRelationAgentprops.getContentPane().add(chckbxInformation);

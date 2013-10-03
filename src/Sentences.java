@@ -1,29 +1,53 @@
+import javax.imageio.ImageIO;
+import javax.imageio.stream.ImageInputStream;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JScrollPane;
+
 import java.awt.Color;
 import java.awt.EventQueue;
+
 import javax.swing.JButton;
+
 import java.awt.Font;
+
 import javax.swing.JComboBox;
 import javax.swing.JTextPane;
+
 import java.sql.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
 import javax.swing.ButtonGroup;
+import javax.swing.ImageIcon;
+import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JSeparator;
 import javax.swing.JTextField;
-import javax.swing.JTree;
-import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.DefaultMutableTreeNode;
+
+import java.awt.Button;
+
+import javax.swing.SwingConstants;
 
 class comboItem  
 {  
@@ -36,7 +60,7 @@ class comboItem
   public String toString(){return name;} 
 }
 
-public class Sentences {
+public class Sentences extends JPanel{
 
 	private JFrame frmTellMeA;	
 	JComboBox<comboItem> cbSubject = new JComboBox<comboItem>();
@@ -53,6 +77,86 @@ public class Sentences {
 	private int TypeSub=3;
 	private int TypeEvent=3;
 	private DynamicTree treePanelHardwareItems;
+	private DynamicTree treePanelItems;
+	BufferedImage image;  
+	private static JPanel imagePanel;  
+	private static JFrame frame;  
+	private String imagePath; 
+	JLabel lblImage = new JLabel("Storyboard image");
+	
+	public BufferedImage getImageById(int id) {
+		String query = "select StoryBoardImage from sentences where idSentences = ?";
+		BufferedImage buffimg = null;
+		
+		try {
+			ConnectDatabase c = new ConnectDatabase();
+			PreparedStatement stmt = c.con.prepareStatement(query);
+			stmt.setInt(1,id);
+			ResultSet result = stmt.executeQuery();
+			result.next();
+			System.out.println("before Blob");
+			Blob b = result.getBlob(1);    
+	        ImageIcon i = new ImageIcon(b.getBytes( 1L, (int) b.length() ) );
+	        lblImage.setIcon(i);
+		}
+		catch(Exception ex) {
+			//System.out.println(ex.getMessage());
+			System.out.print(ex);
+		}
+		return buffimg;
+	}
+	
+	public void LoadAnshowImageFromFile() {  
+	       try {  
+	          /** 
+	           * ImageIO.read() returns a BufferedImage object, decoding the supplied   
+	           * file with an ImageReader, chosen automatically from registered files  
+	           * The File is wrapped in an ImageInputStream object, so we don't need 
+	           * one. Null is returned, If no registered ImageReader claims to be able 
+	           * to read the resulting stream. 
+	           */  
+	    	   JFileChooser fc = new JFileChooser();
+				int returnVal = fc.showOpenDialog(Sentences.this);
+
+	           if (returnVal == JFileChooser.APPROVE_OPTION) {
+	               File file = fc.getSelectedFile();
+	               image = ImageIO.read(new File(file.getPath()));  
+	               imagePath = file.getPath();
+	           }
+	       } catch (IOException e) {  
+	           //Let us know what happened  
+	           System.out.println("Error reading dir: " + e.getMessage());  
+	       }  
+	  
+	    }  
+	
+	private void populateTreeItems(DynamicTree treePanel) {
+        DefaultMutableTreeNode p1;
+        treePanel.clear();
+        ConnectDatabase cdb = new ConnectDatabase();
+        ConnectDatabase cdb2 = new ConnectDatabase();
+		try	{
+			String Query = "select idhardware_items, Name from hardware_items";
+			ResultSet result = cdb.st.executeQuery(Query);
+			while(result.next()) {
+					p1 = treePanel.addObject(null, result.getString("Name"));
+					String QueryComp = "select c.Name, mt.ModalityTypeName from hardware_items_components hic "
+							+ " join hardware_items hi on hi.idhardware_items = hic.HardwareItemID "
+							+ " join hardware_items_modalities him on him.HardwareItemID = hi.idhardware_items "
+							+ " join modality_types mt on mt.idmodality_types = him.ModalityTypeID "
+							+ " join components c on c.idcomponents = hic.ComponentID and c.ModalityTypeID = mt.idmodality_types where hi.idhardware_items = " + result.getString("idhardware_items");
+					ResultSet resultComp = cdb2.st.executeQuery(QueryComp);
+					while(resultComp.next()) {
+						treePanel.addObject(p1, resultComp.getString("mt.ModalityTypeName") + ":  " + resultComp.getString("c.Name"));
+					}
+			}	
+			cdb.st.close();
+    		cdb2.st.close();    			
+			treePanel.expand();
+		}
+		catch(SQLException ex){System.out.print(ex);}
+    }
+	
 	
 	private void populateTree(DynamicTree treePanel) {
         DefaultMutableTreeNode p1;
@@ -62,7 +166,7 @@ public class Sentences {
         ConnectDatabase cdb3 = new ConnectDatabase(); 
 		//int StoryID = 1; //((comboItem)cbSequences.getSelectedItem()).value;
 		String Query = "select * from " 
-					+ " ( SELECT story_chronology.idstory_chronology as id, idSentences as SenConcID, concat(subjects.SubjectName, places.PlaceName, events.EventName, IFNULL(o.SubjectName, ''),  IFNULL(po.PlaceName, '')) as NameEvSeq, 1 as Type" 
+					+ " ( SELECT story_chronology.idstory_chronology as id, idSentences as SenConcID, concat(subjects.SubjectName, ' ', events.EventName, IFNULL(o.SubjectName, '')) as NameEvSeq, 1 as Type" 
 					+ " from sentences left join subjects on sentences.SubjectID = subjects.idsubjects " 
 					+ " left join subjects o on sentences.ObjectID = o.idsubjects " 
 					+ " left join events  on sentences.VerbID = events.idevents " 
@@ -81,6 +185,7 @@ public class Sentences {
 		try	{
 			ResultSet result = cdb.st.executeQuery(Query);			  			  
 			String NameEvSeq, SenSeqConID, Type;
+			treePanel.addObject(null, image);
 			
 			while(result.next()) {
 				NameEvSeq = result.getString("NameEvSeq");	
@@ -91,7 +196,7 @@ public class Sentences {
 				if (Type.equals("3")){
 					
 					String QuerySeq = "select * from "
-								+ " ( SELECT seq_events.idseq_events as id, subjects.SubjectTypesID, concat(subjects.SubjectName, places.PlaceName, events.EventName, IFNULL(o.SubjectName, ''),  IFNULL(po.PlaceName, '')) as NameEvSeq, seq_events.Time  as SeqTime"  
+								+ " ( SELECT seq_events.idseq_events as id, subjects.SubjectTypesID, concat(subjects.SubjectName, ' ', events.EventName, IFNULL(o.SubjectName, '')) as NameEvSeq, seq_events.Time  as SeqTime"  
 								+ " from sequences 	join seq_events on sequences.idsequence = seq_events.SequenceID "  
 								+ " left join sentences on sentences.idSentences = seq_events.EventConID " 	
 								+ " left join subjects on sentences.SubjectID = subjects.idsubjects "  
@@ -118,7 +223,7 @@ public class Sentences {
 				if (Type.equals("2")){
 					
 					String QueryConc = "select * from "
-							+ " ( SELECT concurr_events.idconcurr_events as id, subjects.SubjectTypesID, concat(subjects.SubjectName, places.PlaceName, events.EventName, IFNULL(o.SubjectName, ''),  IFNULL(po.PlaceName, '')) as NameEvSeq "
+							+ " ( SELECT concurr_events.idconcurr_events as id, subjects.SubjectTypesID, concat(subjects.SubjectName, ' ', events.EventName, IFNULL(o.SubjectName, '')) as NameEvSeq "
 							+ " from concurrences 	join concurr_events on concurrences.idconcurrences = concurr_events.ConcurrenceID " 
 							+ " left join sentences on sentences.idSentences = concurr_events.EventConID " 
 							+ " left join subjects on sentences.SubjectID = subjects.idsubjects " 
@@ -144,6 +249,9 @@ public class Sentences {
 					}
 				}	
 			}
+			cdb.st.close();
+    		cdb2.st.close();
+    		cdb3.st.close();	
 			treePanel.expand();
 		}
 		catch(SQLException ex){System.out.print(ex);}
@@ -186,8 +294,9 @@ public class Sentences {
 		    catch( Exception e ) {
 		      e.printStackTrace();
 		}
+		
 		ConnectDatabase cdb = new ConnectDatabase();        
-		String Query = "SELECT subjects.SubjectTypesID, subjects.SubjectName, places.PlaceName, events.EventName, IFNULL(o.SubjectTypesID,'') as objTypesID, IFNULL(o.SubjectName, '') as ObjectName, IFNULL(po.PlaceName, '') as ObjPlaceName from sentences "
+		String Query = "SELECT IFNULL(subjects.SubjectTypesID,'-1') as SubjectTypesID, subjects.SubjectName, places.PlaceName, events.EventName, IFNULL(o.SubjectTypesID,'') as objTypesID, IFNULL(o.SubjectName, '') as ObjectName, IFNULL(po.PlaceName, '') as ObjPlaceName from sentences "
 			+ " left join subjects on sentences.SubjectID = subjects.idsubjects"
 		+ " left join subjects o on sentences.ObjectID = o.idsubjects"
 		+ " left join events  on sentences.VerbID = events.idevents"
@@ -195,17 +304,19 @@ public class Sentences {
 		+ " left join places po on sentences.LocationObjectID = po.idplaces ";
 		try	{
 			ResultSet result = cdb.st.executeQuery(Query);			  			  
-			String SubType, SubName, SubPlaceName, Verb, ObjName, ObjPlaceName, ObjType;			 
+			String SubType = "-1", SubName, SubPlaceName, Verb, ObjName, ObjPlaceName, ObjType= "-1";	
+			textPane.setText("");
 			while(result.next()) {
-				SubType = result.getString("subjects.SubjectTypesID");
+				SubType = result.getString("SubjectTypesID");
 				ObjType = result.getString("objTypesID");				
 				SubName = result.getString("subjects.SubjectName");
 				SubPlaceName = result.getString("places.PlaceName");
 				Verb = result.getString("events.EventName");
 				ObjName = result.getString("ObjectName");
-				ObjPlaceName = result.getString("ObjPlaceName");
+				ObjPlaceName = result.getString("ObjPlaceName");				
 				StyledDocument doc = textPane.getStyledDocument();
-
+				System.out.println(SubName);
+				System.out.println(SubType);
 				try {
 					Style style = textPane.addStyle("Style", null);
 					if (SubType.equals("0")){
@@ -228,6 +339,7 @@ public class Sentences {
 				}	
 				catch (BadLocationException ex){}			
 			}
+			cdb.st.close();
 		}
 		catch(SQLException ex){System.out.print(ex);}
 		
@@ -264,14 +376,14 @@ public class Sentences {
 		System.out.println("INIT 1");
 		frmTellMeA = new JFrame();		
 		frmTellMeA.setTitle("Tell me a story!");
-		frmTellMeA.setBounds(100, 100, 1295, 598);
+		frmTellMeA.setBounds(100, 100, 1295, 885);
 		frmTellMeA.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frmTellMeA.getContentPane().setLayout(null);
 		
 		JLabel label = new JLabel("Agent/Prop/Participant");
 		label.setFont(new Font("Calibri", Font.PLAIN, 11));
 		label.setForeground(Color.BLACK);
-		label.setBounds(6, 615, 155, 14);
+		label.setBounds(20, 888, 155, 14);
 		frmTellMeA.getContentPane().add(label);
 		
 		JButton button = new JButton("Add new");
@@ -283,13 +395,13 @@ public class Sentences {
 				getData();
 			}
 		});		
-		button.setBounds(158, 611, 89, 23);
+		button.setBounds(172, 884, 89, 23);
 		frmTellMeA.getContentPane().add(button);
 		
 		JLabel label_1 = new JLabel("Place");
 		label_1.setFont(new Font("Calibri", Font.PLAIN, 11));
 		label_1.setForeground(Color.BLACK);
-		label_1.setBounds(6, 649, 46, 14);
+		label_1.setBounds(20, 922, 46, 14);
 		frmTellMeA.getContentPane().add(label_1);
 		
 		JButton button_1 = new JButton("Add new");
@@ -301,13 +413,13 @@ public class Sentences {
 				getData();
 			}
 		});
-		button_1.setBounds(158, 645, 89, 23);
+		button_1.setBounds(172, 918, 89, 23);
 		frmTellMeA.getContentPane().add(button_1);
 		
 		JLabel label_2 = new JLabel("Event");
 		label_2.setFont(new Font("Calibri", Font.PLAIN, 11));
 		label_2.setForeground(Color.BLACK);
-		label_2.setBounds(6, 683, 46, 14);
+		label_2.setBounds(20, 956, 46, 14);
 		frmTellMeA.getContentPane().add(label_2);
 		
 		JButton button_2 = new JButton("Add new");
@@ -320,7 +432,7 @@ public class Sentences {
 			}
 		});
 		
-		button_2.setBounds(158, 679, 89, 23);
+		button_2.setBounds(172, 952, 89, 23);
 		frmTellMeA.getContentPane().add(button_2);
 		
 		JLabel label_3 = new JLabel("Sentences:");
@@ -372,28 +484,46 @@ public class Sentences {
 		cbLocation.setBounds(6, 156, 145, 20);
 		frmTellMeA.getContentPane().add(cbLocation);		
 		
-		textPane.setFont(new Font("Calibri", Font.PLAIN, 11));
-		textPane.setEditable(false);
-		//textPane.setBounds(26, 339, 471, 195);
-		JScrollPane sp = new JScrollPane(textPane);
-		sp.setBounds(6, 227, 471, 295);
-		frmTellMeA.getContentPane().add(sp);
-		
 		JButton btnAddSentence = new JButton("Add sentence");
 		btnAddSentence.setFont(new Font("Calibri", Font.PLAIN, 11));
 		btnAddSentence.addActionListener(new ActionListener() {
+			@SuppressWarnings("resource")
 			public void actionPerformed(ActionEvent e) {
-				ConnectDatabase cdb = new ConnectDatabase();
-		        System.out.println("After Connect Database!");
-		        int SubjectID = ((comboItem)cbSubject.getSelectedItem()).value;
-		        int VerbID = ((comboItem)cbVerb.getSelectedItem()).value;
-		        int ObjectID = ((comboItem)cbObject.getSelectedItem()).value;
-		        int LocationID = ((comboItem)cbLocation.getSelectedItem()).value;
-		        int LocationObjectID = ((comboItem)cbLocationObject.getSelectedItem()).value;
-		        try {
-		            cdb.st.executeUpdate("INSERT INTO sentences (SubjectID, VerbID, ObjectID, LocationID, LocationObjectID) VALUES ("+Integer.toString(SubjectID)+","+Integer.toString(VerbID)+","+Integer.toString(ObjectID)+","+Integer.toString(LocationID)+","+Integer.toString(LocationObjectID)+")");
+				try {
+					ConnectDatabase cdb = new ConnectDatabase();
+					System.out.println("After Connect Database!");
+					PreparedStatement psmnt = null;
+					// declare FileInputStream object to store binary stream of given image.
+					FileInputStream fis;
+					File Saveimage = new File(imagePath);
+					fis = new FileInputStream(Saveimage);
+					int SubjectID = ((comboItem)cbSubject.getSelectedItem()).value;
+					int VerbID = ((comboItem)cbVerb.getSelectedItem()).value;
+					int ObjectID = ((comboItem)cbObject.getSelectedItem()).value;
+					int LocationID = ((comboItem)cbLocation.getSelectedItem()).value;
+					int LocationObjectID = ((comboItem)cbLocationObject.getSelectedItem()).value;
+					psmnt = cdb.con.prepareStatement
+							("INSERT INTO sentences (SubjectID, VerbID, ObjectID, LocationID, LocationObjectID, StoryBoardImage) "+ "values(?,?,?,?,?,?)");
+							psmnt.setString(1,Integer.toString(SubjectID));
+							psmnt.setString(2,Integer.toString(VerbID));
+							psmnt.setString(3,Integer.toString(ObjectID));
+							psmnt.setString(4,Integer.toString(LocationID));
+							psmnt.setString(5,Integer.toString(LocationObjectID));
+							fis = new FileInputStream(Saveimage);
+							psmnt.setBinaryStream(6, (InputStream)fis, (int)(Saveimage.length()));
+							/* executeUpdate() method execute specified sql query. Here this query 
+							insert data and image from specified address. */ 
+					int s = psmnt.executeUpdate();
+					if(s>0) {
+						System.out.println("Uploaded successfully !");
+					}
+					else {
+						System.out.println("unsucessfull to upload image.");					
+					}
+		        
+		            //cdb.st.executeUpdate("INSERT INTO sentences (SubjectID, VerbID, ObjectID, LocationID, LocationObjectID) VALUES ("+Integer.toString(SubjectID)+","+Integer.toString(VerbID)+","+Integer.toString(ObjectID)+","+Integer.toString(LocationID)+","+Integer.toString(LocationObjectID)+")");
 		            System.out.println("1 row affected");		           
-		        } catch (SQLException ex) {
+		        } catch (SQLException | FileNotFoundException ex) {
 		        	System.out.println("SQL statement is not executed!"+ex);
 		        }
 		        getData();
@@ -421,7 +551,7 @@ public class Sentences {
 				Time.main(args);
 			}
 		});
-		btnNewButton.setBounds(257, 611, 121, 23);
+		btnNewButton.setBounds(271, 884, 121, 23);
 		frmTellMeA.getContentPane().add(btnNewButton);
 		
 		JButton btnNewButton_1 = new JButton("Define Events");
@@ -453,17 +583,17 @@ public class Sentences {
 		
 		JRadioButton rdbtnMust = new JRadioButton("MUST");
 		rdbtnMust.setFont(new Font("Calibri", Font.PLAIN, 11));
-		rdbtnMust.setBounds(400, 611, 63, 23);
+		rdbtnMust.setBounds(414, 884, 63, 23);
 		frmTellMeA.getContentPane().add(rdbtnMust);
 		
 		JRadioButton rdbtnMay = new JRadioButton("MAY");
 		rdbtnMay.setFont(new Font("Calibri", Font.PLAIN, 11));
-		rdbtnMay.setBounds(400, 645, 109, 23);
+		rdbtnMay.setBounds(414, 918, 109, 23);
 		frmTellMeA.getContentPane().add(rdbtnMay);
 		
 		JRadioButton rdbtnForbidden = new JRadioButton("FORBIDDEN");
 		rdbtnForbidden.setFont(new Font("Calibri", Font.PLAIN, 11));
-		rdbtnForbidden.setBounds(400, 671, 109, 23);
+		rdbtnForbidden.setBounds(522, 879, 109, 23);
 		frmTellMeA.getContentPane().add(rdbtnForbidden);
 		
 		JSeparator separator = new JSeparator();
@@ -478,7 +608,7 @@ public class Sentences {
 			}
 		});
 		btnCreateSequence.setFont(new Font("Calibri", Font.PLAIN, 11));
-		btnCreateSequence.setBounds(257, 640, 121, 23);
+		btnCreateSequence.setBounds(271, 913, 121, 23);
 		frmTellMeA.getContentPane().add(btnCreateSequence);
 		
 		JButton btnNewButton_4 = new JButton("Define seq");
@@ -489,7 +619,7 @@ public class Sentences {
 			}
 		});
 		btnNewButton_4.setFont(new Font("Calibri", Font.PLAIN, 11));
-		btnNewButton_4.setBounds(657, 434, 104, 23);
+		btnNewButton_4.setBounds(657, 561, 104, 23);
 		frmTellMeA.getContentPane().add(btnNewButton_4);
 		
 		JButton btnNewButton_5 = new JButton("New concurrence");
@@ -500,7 +630,7 @@ public class Sentences {
 			}
 		});
 		btnNewButton_5.setFont(new Font("Calibri", Font.PLAIN, 11));
-		btnNewButton_5.setBounds(257, 674, 121, 23);
+		btnNewButton_5.setBounds(271, 947, 121, 23);
 		frmTellMeA.getContentPane().add(btnNewButton_5);
 		
 		JButton btnNewButton_6 = new JButton("Define conc");
@@ -511,7 +641,7 @@ public class Sentences {
 			}
 		});
 		btnNewButton_6.setFont(new Font("Calibri", Font.PLAIN, 11));
-		btnNewButton_6.setBounds(657, 516, 104, 23);
+		btnNewButton_6.setBounds(657, 643, 104, 23);
 		frmTellMeA.getContentPane().add(btnNewButton_6);
 		
 		JLabel label_9 = new JLabel("Name");		
@@ -520,6 +650,7 @@ public class Sentences {
 		frmTellMeA.getContentPane().add(label_9);
 		
 		txtSubjectName = new JTextField();
+		txtSubjectName.setFont(new Font("Calibri", Font.PLAIN, 10));
 		txtSubjectName.setColumns(10);
 		txtSubjectName.setBounds(542, 29, 311, 20);
 		frmTellMeA.getContentPane().add(txtSubjectName);
@@ -602,6 +733,7 @@ public class Sentences {
 		frmTellMeA.getContentPane().add(label_11);
 		
 		txtPlaceName = new JTextField();
+		txtPlaceName.setFont(new Font("Calibri", Font.PLAIN, 10));
 		txtPlaceName.setColumns(10);
 		txtPlaceName.setBounds(542, 152, 311, 20);
 		frmTellMeA.getContentPane().add(txtPlaceName);
@@ -653,6 +785,7 @@ public class Sentences {
 		frmTellMeA.getContentPane().add(label_13);
 		
 		txtEventName = new JTextField();
+		txtEventName.setFont(new Font("Calibri", Font.PLAIN, 10));
 		txtEventName.setColumns(10);
 		txtEventName.setBounds(542, 249, 311, 20);
 		frmTellMeA.getContentPane().add(txtEventName);
@@ -716,22 +849,23 @@ public class Sentences {
 		frmTellMeA.getContentPane().add(btnAddEvent);
 		
 		JSeparator separator_2 = new JSeparator();
-		separator_2.setBounds(505, 360, 369, 2);
+		separator_2.setBounds(505, 487, 369, 2);
 		frmTellMeA.getContentPane().add(separator_2);
 		
 		JLabel lblTime = new JLabel("Time");
 		lblTime.setFont(new Font("Calibri", Font.BOLD, 11));
-		lblTime.setBounds(505, 364, 46, 14);
+		lblTime.setBounds(505, 491, 46, 14);
 		frmTellMeA.getContentPane().add(lblTime);
 		
 		JLabel label_15 = new JLabel("Name");
 		label_15.setFont(new Font("Calibri", Font.PLAIN, 11));
-		label_15.setBounds(505, 403, 46, 14);
+		label_15.setBounds(505, 530, 46, 14);
 		frmTellMeA.getContentPane().add(label_15);
 		
 		txtSeqName = new JTextField();
+		txtSeqName.setFont(new Font("Calibri", Font.PLAIN, 10));
 		txtSeqName.setColumns(10);
-		txtSeqName.setBounds(542, 403, 311, 20);
+		txtSeqName.setBounds(542, 530, 311, 20);
 		frmTellMeA.getContentPane().add(txtSeqName);
 		
 		JButton btnAddSequence = new JButton("Add seq");
@@ -754,22 +888,23 @@ public class Sentences {
 			}
 		});
 		btnAddSequence.setFont(new Font("Calibri", Font.PLAIN, 11));
-		btnAddSequence.setBounds(764, 434, 92, 23);
+		btnAddSequence.setBounds(764, 561, 92, 23);
 		frmTellMeA.getContentPane().add(btnAddSequence);
 		
 		JLabel lblSequence = new JLabel("Coupling of events in a sequence");
 		lblSequence.setFont(new Font("Calibri", Font.BOLD, 11));
-		lblSequence.setBounds(505, 384, 155, 14);
+		lblSequence.setBounds(505, 511, 155, 14);
 		frmTellMeA.getContentPane().add(lblSequence);
 		
 		JLabel label_16 = new JLabel("Name");
 		label_16.setFont(new Font("Calibri", Font.PLAIN, 11));
-		label_16.setBounds(505, 489, 46, 14);
+		label_16.setBounds(505, 616, 46, 14);
 		frmTellMeA.getContentPane().add(label_16);
 		
 		txtConName = new JTextField();
+		txtConName.setFont(new Font("Calibri", Font.PLAIN, 10));
 		txtConName.setColumns(10);
-		txtConName.setBounds(542, 485, 311, 20);
+		txtConName.setBounds(542, 612, 311, 20);
 		frmTellMeA.getContentPane().add(txtConName);
 		
 		JButton btnAddCon = new JButton("Add con");
@@ -792,12 +927,12 @@ public class Sentences {
 			}
 		});
 		btnAddCon.setFont(new Font("Calibri", Font.PLAIN, 11));
-		btnAddCon.setBounds(764, 516, 92, 23);
+		btnAddCon.setBounds(764, 643, 92, 23);
 		frmTellMeA.getContentPane().add(btnAddCon);
 		
-		JLabel lblNewLabel_1 = new JLabel("Agents acting together ");
+		JLabel lblNewLabel_1 = new JLabel("Coupling of stimuli");
 		lblNewLabel_1.setFont(new Font("Calibri", Font.BOLD, 11));
-		lblNewLabel_1.setBounds(505, 465, 143, 14);
+		lblNewLabel_1.setBounds(505, 592, 143, 14);
 		frmTellMeA.getContentPane().add(lblNewLabel_1);
 		
 		JLabel lblNewLabel_2 = new JLabel("Title:");
@@ -810,7 +945,7 @@ public class Sentences {
 		frmTellMeA.getContentPane().add(separator_3);
 		
 		JSeparator separator_4 = new JSeparator();
-		separator_4.setBounds(10, 218, 457, 2);
+		separator_4.setBounds(20, 487, 457, 2);
 		frmTellMeA.getContentPane().add(separator_4);
 		
 		JButton btnNewButton_7 = new JButton("Add Item");
@@ -818,6 +953,7 @@ public class Sentences {
 			public void actionPerformed(ActionEvent e) {
 				String[] args = new String[0];
 				HardwareItem.main(args);
+				populateTreeItems(treePanelItems);
 			}
 		});
 		btnNewButton_7.setFont(new Font("Calibri", Font.PLAIN, 11));
@@ -834,6 +970,8 @@ public class Sentences {
 			public void actionPerformed(ActionEvent arg0) {
 				String[] args = new String[0];
 				HardwareItemComponents.main(args);
+				populateTreeItems(treePanelItems);
+				
 			}
 		});
 		btnNewButton_8.setFont(new Font("Calibri", Font.PLAIN, 11));
@@ -844,34 +982,91 @@ public class Sentences {
 		separator_5.setBounds(890, 360, 369, 2);
 		frmTellMeA.getContentPane().add(separator_5);
 		
-		JTree tree = new JTree();
-		tree.setFont(new Font("Calibri", Font.PLAIN, 11));
-		tree.setModel(new DefaultTreeModel(
-			new DefaultMutableTreeNode("JTree") {
-				/**
-				 * 
-				 */
-				private static final long serialVersionUID = 7065875025224153434L;
-
-				{
-				}
-			}
-		));
-		tree.setBounds(890, 31, 369, 321);
-		frmTellMeA.getContentPane().add(tree);
+		treePanelItems = new DynamicTree();		
+		treePanelItems.setBounds(890, 31, 369, 321);
+		treePanelItems.setFont(new Font("Calibri", Font.PLAIN, 11));
+		frmTellMeA.getContentPane().add(treePanelItems);
+		populateTreeItems(treePanelItems);
+		
+		textPane.setFont(new Font("Calibri", Font.PLAIN, 11));
+		textPane.setEditable(false);
+		//textPane.setBounds(26, 339, 471, 195);
+		final JScrollPane sp = new JScrollPane();
+		sp.setBounds(6, 500, 471, 295);
+		frmTellMeA.getContentPane().add(sp);
+		sp.setViewportView(textPane);
 		
 		treePanelHardwareItems = new DynamicTree();		
-		treePanelHardwareItems.setBounds(6, 227, 471, 295);
+		treePanelHardwareItems.setBounds(6, 500, 471, 295);
 		frmTellMeA.getContentPane().add(treePanelHardwareItems);
 		
 		JButton btnChronology = new JButton("Chronology");
+		btnChronology.setFont(new Font("Calibri", Font.PLAIN, 10));
 		btnChronology.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {				
 				populateTree(treePanelHardwareItems);
+				sp.setViewportView(treePanelHardwareItems);
 			}
 		});
-		btnChronology.setBounds(6, 526, 89, 23);
+		btnChronology.setBounds(6, 806, 89, 23);
 		frmTellMeA.getContentPane().add(btnChronology);
+		
+		JButton btnSentences = new JButton("Sentences");
+		btnSentences.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				sp.setViewportView(textPane);
+			}
+		});
+		btnSentences.setFont(new Font("Calibri", Font.PLAIN, 10));
+		btnSentences.setBounds(105, 806, 89, 23);
+		frmTellMeA.getContentPane().add(btnSentences);
+		
+		//final JLabel lblImage = new JLabel("Storyboard image");
+		lblImage.setToolTipText("Click Storyboard image button to select an image for the sentence");
+		lblImage.setFont(new Font("Calibri", Font.PLAIN, 10));
+		lblImage.setBackground(Color.LIGHT_GRAY);
+		lblImage.setForeground(Color.BLACK);
+		lblImage.setHorizontalAlignment(SwingConstants.CENTER);
+		lblImage.setBounds(6, 218, 471, 258);
+		frmTellMeA.getContentPane().add(lblImage);
+		
+		JButton btnChooseStoryboard = new JButton("Storyboard image");
+		btnChooseStoryboard.setFont(new Font("Calibri", Font.PLAIN, 10));
+		btnChooseStoryboard.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				LoadAnshowImageFromFile();
+				ImageIcon icon = new ImageIcon(image);
+				lblImage.setIcon(icon);
+				//lblImage.setBounds(10, 226, image.getWidth(null), image.getHeight(null));
+//				frame = new JFrame("Loading Image From File Example");    
+//		        imagePanel = new JPanel();  
+//		        //Release the resource window handle as we close the frame  
+//		        frame.addWindowListener(new WindowAdapter(){  
+//		                public void windowClosing(WindowEvent e) {  
+//		                    System.exit(0);  
+//		                }  
+//		            });  
+//		        imagePanel.add(new LoadAnshowImageFromFile());  
+//		        frame.add(imagePanel);  
+//		        frame.pack();  
+//		        frame.setVisible(true); 
+			}
+		});
+		btnChooseStoryboard.setBounds(249, 183, 109, 23);
+		frmTellMeA.getContentPane().add(btnChooseStoryboard);
+		
+		JButton btnNewButton_9 = new JButton("Storyboard");
+		btnNewButton_9.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				 String[] args = new String[0];
+				 ImageList.main(args);
+			}
+		});
+		btnNewButton_9.setFont(new Font("Calibri", Font.PLAIN, 10));
+		btnNewButton_9.setBounds(204, 805, 89, 23);
+		frmTellMeA.getContentPane().add(btnNewButton_9);
+		
+		
 	
 	
 						
