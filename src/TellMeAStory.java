@@ -1,9 +1,11 @@
 import java.awt.EventQueue;
 
+import javax.swing.Icon;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
+import javax.swing.JTree;
 
 import java.awt.BorderLayout;
 
@@ -46,6 +48,8 @@ import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeCellRenderer;
+import javax.swing.tree.TreeCellRenderer;
 
 @SuppressWarnings("serial")
 public class TellMeAStory extends JPanel{
@@ -77,16 +81,9 @@ public class TellMeAStory extends JPanel{
 	final JScrollPane sp = new JScrollPane();
 	private JTextField txtSeqName;
 	private JTextField txtConName;
-
+	
 	public void LoadAnshowImageFromFile() {  
-	       try {  
-	          /** 
-	           * ImageIO.read() returns a BufferedImage object, decoding the supplied   
-	           * file with an ImageReader, chosen automatically from registered files  
-	           * The File is wrapped in an ImageInputStream object, so we don't need 
-	           * one. Null is returned, If no registered ImageReader claims to be able 
-	           * to read the resulting stream. 
-	           */  
+	       try {
 	    	   JFileChooser fc = new JFileChooser();
 				int returnVal = fc.showOpenDialog(TellMeAStory.this);
 
@@ -96,11 +93,21 @@ public class TellMeAStory extends JPanel{
 	               imagePath = file.getPath();
 	           }
 	       } catch (IOException e) {  
-	           //Let us know what happened  
+  
 	           System.out.println("Error reading dir: " + e.getMessage());  
 	       }  
 	  
 	    }  
+	protected ImageIcon createImageIcon(String path,
+            String description) {
+		java.net.URL imgURL = getClass().getResource(path);
+		if (imgURL != null) {
+			return new ImageIcon(imgURL, description);
+		} else {
+			System.err.println("Couldn't find file: " + path);
+			return null;
+		}
+	}
 	
 	private void populateTreeItems(DynamicTree treePanel) {
      DefaultMutableTreeNode p1;
@@ -112,12 +119,8 @@ public class TellMeAStory extends JPanel{
 			ResultSet result = cdb.st.executeQuery(Query);
 			while(result.next()) {
 					p1 = treePanel.addObject(null, result.getString("Name"));
-					String QueryComp = "select c.Name, mt.ModalityTypeName from hardware_items_components hic "
-							+ " join hardware_items hi on hi.idhardware_items = hic.HardwareItemID "
-							+ " join hardware_items_modalities him on him.HardwareItemID = hi.idhardware_items "
-							+ " join modality_types mt on mt.idmodality_types = him.ModalityTypeID "
-							+ " join components c on c.idcomponents = hic.ComponentID and c.ModalityTypeID = mt.idmodality_types where hi.idhardware_items = " + result.getString("idhardware_items");
-					ResultSet resultComp = cdb2.st.executeQuery(QueryComp);
+					CallableStatement cs = cdb.con.prepareCall("{call SelectModalityTypesByItemID("+result.getString("idhardware_items")+")}");
+					ResultSet resultComp = cs.executeQuery(); 
 					while(resultComp.next()) {
 						treePanel.addObject(p1, resultComp.getString("mt.ModalityTypeName") + ":  " + resultComp.getString("c.Name"));
 					}
@@ -135,27 +138,10 @@ public class TellMeAStory extends JPanel{
      treePanel.clear();
      ConnectDatabase cdb = new ConnectDatabase();
      ConnectDatabase cdb2 = new ConnectDatabase();
-     ConnectDatabase cdb3 = new ConnectDatabase(); 
-		//int StoryID = 1; //((comboItem)cbSequences.getSelectedItem()).value;
-		String Query = "select * from " 
-					+ " ( SELECT story_chronology.idstory_chronology as id, idSentences as SenConcID, concat(subjects.SubjectName, ' ', events.EventName, IFNULL(o.SubjectName, '')) as NameEvSeq, 1 as Type" 
-					+ " from sentences left join subjects on sentences.SubjectID = subjects.idsubjects " 
-					+ " left join subjects o on sentences.ObjectID = o.idsubjects " 
-					+ " left join events  on sentences.VerbID = events.idevents " 
-					+ " left join places on sentences.LocationID = places.idplaces " 
-					+ " left join places po on sentences.LocationObjectID = po.idplaces " 
-					+ " join story_chronology on story_chronology.EventSeqConID = sentences.idSentences and story_chronology.EventSeqConTypeID = 1 "
-					+ " union " 
-					+ " select story_chronology.idstory_chronology as id, idsequence as SenConcID, NameSeq as NameEvSeq, 3 as Type " 
-					+ " from sequences join story_chronology on story_chronology.EventSeqConID = sequences.idsequence and story_chronology.EventSeqConTypeID = 3 "
-					+ " union "
-					+ " select story_chronology.idstory_chronology as id, idconcurrences as SenConcID, NameConc as NameEvSeq, 2 as Type " 
-					+ " from concurrences join story_chronology on story_chronology.EventSeqConID = concurrences.idconcurrences and story_chronology.EventSeqConTypeID = 2"
-					+ " ) as results "
-					+ " order by id";
-		System.out.println(Query);
+     ConnectDatabase cdb3 = new ConnectDatabase();    
 		try	{
-			ResultSet result = cdb.st.executeQuery(Query);			  			  
+			CallableStatement cs = cdb.con.prepareCall("{call SelectChronology()}");
+			ResultSet result = cs.executeQuery(); 			  			  
 			String NameEvSeq, SenSeqConID, Type;
 			treePanel.addObject(null, image);
 			
@@ -166,57 +152,20 @@ public class TellMeAStory extends JPanel{
 				System.out.println("result 1 query 1");
 				p1 = treePanel.addObject(null, NameEvSeq);
 				if (Type.equals("3")){
-					
-					String QuerySeq = "select * from "
-								+ " ( SELECT seq_events.idseq_events as id, subjects.SubjectTypesID, concat(subjects.SubjectName, ' ', events.EventName, IFNULL(o.SubjectName, '')) as NameEvSeq, seq_events.Time  as SeqTime"  
-								+ " from sequences 	join seq_events on sequences.idsequence = seq_events.SequenceID "  
-								+ " left join sentences on sentences.idSentences = seq_events.EventConID " 	
-								+ " left join subjects on sentences.SubjectID = subjects.idsubjects "  
-								+ " left join subjects o on sentences.ObjectID = o.idsubjects "  
-								+ " left join events  on sentences.VerbID = events.idevents "  
-								+ " left join places on sentences.LocationID = places.idplaces "  
-								+ " left join places po on sentences.LocationObjectID = po.idplaces "   
-								+ " where sequences.idsequence = " + SenSeqConID +  " and seq_events.TypeID = 1 " 
-								+ " union " 
-								+ " select seq_events.idseq_events as id, 3 as SybjectTypesID, concurrences.NameConc as NameEvSeq,  seq_events.Time  as SeqTime "
-								+ " from sequences 	join seq_events on sequences.idsequence = seq_events.SequenceID "  
-								+ " join concurrences on concurrences.idconcurrences = seq_events.EventConID "
-								+ " where sequences.idsequence =  " + SenSeqConID +  " and seq_events.TypeID = 2 ) as result "
-								+ " order by id ";
-					ResultSet resultSeq = cdb2.st.executeQuery(QuerySeq);			  			  
+					cs = cdb.con.prepareCall("{call SelectSentenceConSeqByID(" + SenSeqConID + ")}");
+					ResultSet resultSeq = cs.executeQuery();
 					String NameSeq;						
 					while(resultSeq.next()) {
 						NameSeq = resultSeq.getString("NameEvSeq");	
-						//SenSeqConID = result.getString("SenConcID");
-						//Type = result.getString("Type");
 						treePanel.addObject(p1, NameSeq);
 					}
 				}	
 				if (Type.equals("2")){
-					
-					String QueryConc = "select * from "
-							+ " ( SELECT concurr_events.idconcurr_events as id, subjects.SubjectTypesID, concat(subjects.SubjectName, ' ', events.EventName, IFNULL(o.SubjectName, '')) as NameEvSeq "
-							+ " from concurrences 	join concurr_events on concurrences.idconcurrences = concurr_events.ConcurrenceID " 
-							+ " left join sentences on sentences.idSentences = concurr_events.EventConID " 
-							+ " left join subjects on sentences.SubjectID = subjects.idsubjects " 
-							+ " left join subjects o on sentences.ObjectID = o.idsubjects " 
-							+ " left join events  on sentences.VerbID = events.idevents " 
-							+ " left join places on sentences.LocationID = places.idplaces " 
-							+ " left join places po on sentences.LocationObjectID = po.idplaces " 
-							+ " where concurrences.idconcurrences = " + SenSeqConID +  " and concurr_events.EventConTypeID = 1 " 
-							+ " union " 
-							+ " select concurr_events.idconcurr_events as id, 3 as SybjectTypesID, sequences.NameSeq as NameEvSeq" 
-							+ " from concurrences 	join concurr_events on concurrences.idconcurrences = concurr_events.ConcurrenceID " 
-							+ " join sequences on sequences.idsequence = concurr_events.EventConID " 
-							+ " where concurrences.idconcurrences =  " + SenSeqConID +  " and concurr_events.EventConTypeID = 3) as result " 
-							+ " order by id ";
-					System.out.println(QueryConc);
-					ResultSet resultCon = cdb3.st.executeQuery(QueryConc);			  			  
+					cs = cdb.con.prepareCall("{call SelectSentenceConSeqByIDType(" + SenSeqConID + ")}");
+					ResultSet resultCon = cs.executeQuery();
 					String NameCon;						
 					while(resultCon.next()) {
 						NameCon = resultCon.getString("NameEvSeq");	
-						//SenSeqConID = result.getString("SenConcID");
-						//Type = result.getString("Type");
 						treePanel.addObject(p1, NameCon);
 					}
 				}	
@@ -267,23 +216,18 @@ public class TellMeAStory extends JPanel{
 		      e.printStackTrace();
 		}
 		
-		ConnectDatabase cdb = new ConnectDatabase();        
-		String Query = "SELECT IFNULL(subjects.SubjectTypesID,'-1') as SubjectTypesID, subjects.SubjectName, places.PlaceName, events.EventName, IFNULL(o.SubjectTypesID,'') as objTypesID, IFNULL(o.SubjectName, '') as ObjectName, IFNULL(po.PlaceName, '') as ObjPlaceName from sentences "
-			+ " left join subjects on sentences.SubjectID = subjects.idsubjects"
-		+ " left join subjects o on sentences.ObjectID = o.idsubjects"
-		+ " left join events  on sentences.VerbID = events.idevents"
-		+ " left join places on sentences.LocationID = places.idplaces" 
-		+ " left join places po on sentences.LocationObjectID = po.idplaces ";
 		try	{
-			ResultSet result = cdb.st.executeQuery(Query);			  			  
+			ConnectDatabase cdb = new ConnectDatabase();      
+			CallableStatement cs = cdb.con.prepareCall("{call SelectSentences()}");
+			ResultSet result = cs.executeQuery();
 			String SubType = "-1", SubName, SubPlaceName, Verb, ObjName, ObjPlaceName, ObjType= "-1";	
 			textPane.setText("");
 			while(result.next()) {
 				SubType = result.getString("SubjectTypesID");
 				ObjType = result.getString("objTypesID");				
-				SubName = result.getString("subjects.SubjectName");
-				SubPlaceName = result.getString("places.PlaceName");
-				Verb = result.getString("events.EventName");
+				SubName = result.getString("SubjectName");
+				SubPlaceName = result.getString("PlaceName");
+				Verb = result.getString("EventName");
 				ObjName = result.getString("ObjectName");
 				ObjPlaceName = result.getString("ObjPlaceName");				
 				StyledDocument doc = textPane.getStyledDocument();
@@ -318,79 +262,17 @@ public class TellMeAStory extends JPanel{
 	}
 	
 	private void getDataTimeEvents(){
-		/*cbFirstSentence.removeAll();
-		cbSecondSentence.removeAll();
-		try	{
-			ConnectDatabase cdb = new ConnectDatabase();        
-			String Query = "SELECT idSentences, subjects.SubjectTypesID, subjects.SubjectName, places.PlaceName, events.EventName, IFNULL(o.SubjectName, '') as ObjectName, IFNULL(po.PlaceName, '') as ObjPlaceName from sentences "
-						+ " left join subjects on sentences.SubjectID = subjects.idsubjects"
-						+ " left join subjects o on sentences.ObjectID = o.idsubjects"
-						+ " left join events  on sentences.VerbID = events.idevents"
-						+ " left join places on sentences.LocationID = places.idplaces" 
-						+ " left join places po on sentences.LocationObjectID = po.idplaces ";		
-			ResultSet result = cdb.st.executeQuery(Query);			  			  
-			String SentenceID, SubType, SubName, SubPlaceName, Verb, ObjName, ObjPlaceName, OneSentence = "";	
-			List<comboItemSentence> sentences = new ArrayList<comboItemSentence>();		    
-			comboItemSentence cItem = new comboItemSentence("", -1);
-		    sentences.add(cItem);
-			while(result.next()) {
-				SentenceID = result.getString("idSentences");
-				SubType = result.getString("subjects.SubjectTypesID");				
-				SubName = result.getString("subjects.SubjectName");
-				SubPlaceName = result.getString("places.PlaceName");
-				Verb = result.getString("events.EventName");
-				ObjName = result.getString("ObjectName");
-				ObjPlaceName = result.getString("ObjPlaceName");
-				OneSentence = SubName + " (" + SubPlaceName + ") " + Verb + " " + ObjName + " (" + ObjPlaceName + ")";
-				System.out.println(OneSentence);
-			    cItem = new comboItemSentence(OneSentence, Integer.parseInt(SentenceID));
-			    sentences.add(cItem);	
-			}
-			comboItemSentence [] sentenceArray = sentences.toArray( new comboItemSentence[sentences.size()]);	
-			System.out.println(sentenceArray[5]);
-			cbFirstSentence = new JComboBox(sentenceArray);
-			cbFirstSentence.setFont(new Font("Calibri", Font.PLAIN, 11));
-			cbSecondSentence = new JComboBox(sentenceArray);
-			cbSecondSentence.setFont(new Font("Calibri", Font.PLAIN, 11));
-		}
-		catch(SQLException ex){System.out.print(ex);}*/
-		
 		cbEvents.removeAllItems();
 		try	{
-			ConnectDatabase cdb = new ConnectDatabase();        
-			String Query = "SELECT idSentences as SenConcID, concat(subjects.SubjectName, places.PlaceName, events.EventName, IFNULL(o.SubjectName, ''),  IFNULL(po.PlaceName, '')) as NameEvConc, 1 as Type " 
-						+ " from sentences left join subjects on sentences.SubjectID = subjects.idsubjects "
-						+ " left join subjects o on sentences.ObjectID = o.idsubjects "
-						+ " left join events  on sentences.VerbID = events.idevents "
-						+ " left join places on sentences.LocationID = places.idplaces "
-						+ " left join places po on sentences.LocationObjectID = po.idplaces "
-						+ " union " 
-						+ " select idconcurrences as SenConcID, NameConc as NameEvConc, 2 as Type " 
-						+ " from concurrences"	
-						+ " union " 
-						+ " select idsequence as SenConcID, NameSeq as NameEvConc, 3 as Type " 
-						+ " from sequences";
-			ResultSet result = cdb.st.executeQuery(Query);			  			  
-			//String SentenceID, Type, OneSentence = "";	
-			//List<comboItemSeq> sentences = new ArrayList<comboItemSeq>();		    
-			//comboItemSeq cItem = new comboItemSeq("", -1, -1);
+			ConnectDatabase cdb = new ConnectDatabase();
+			CallableStatement cs = cdb.con.prepareCall("{call SelectSentenceConSeq()}");
+			ResultSet result = cs.executeQuery();
 			cbEvents.addItem(new comboItemSeq("", -1, -1));
-		    //sentences.add(cItem);
 			while(result.next()) {
-				//SentenceID = result.getString("SenConcID");
-				//OneSentence = result.getString("NameEvConc");				
-				//Type = result.getString("Type");
-			    //cItem = new comboItemSeq(OneSentence, Integer.parseInt(SentenceID), Integer.parseInt(Type));
 			    cbEvents.addItem(new comboItemSeq(result.getString("NameEvConc"), result.getInt("SenConcID"), result.getInt("Type")));
-			    //sentences.add(cItem);	
 			}
-			//comboItemSeq [] sentenceArray = sentences.toArray( new comboItemSeq[sentences.size()]);	
-			//System.out.println(sentenceArray[5]);
-			//cbEvents = new JComboBox(sentenceArray);
-			//cbEvents.setFont(new Font("Calibri", Font.PLAIN, 11));
 		}
 		catch(SQLException ex){System.out.print(ex);}
-		
 	}
 	
 	
@@ -607,18 +489,18 @@ public class TellMeAStory extends JPanel{
 		
 		JLabel lblEvName = new JLabel("Name");
 		lblEvName.setFont(new Font("Calibri", Font.PLAIN, 11));
-		lblEvName.setBounds(10, 583, 44, 14);
+		lblEvName.setBounds(10, 627, 44, 14);
 		card1.add(lblEvName);
 		
 		txtEventName = new JTextField();
 		txtEventName.setFont(new Font("Calibri", Font.PLAIN, 10));
 		txtEventName.setColumns(10);
-		txtEventName.setBounds(47, 579, 219, 20);
+		txtEventName.setBounds(47, 623, 219, 20);
 		card1.add(txtEventName);
 		
 		JLabel lblBy = new JLabel("By");
 		lblBy.setFont(new Font("Calibri", Font.PLAIN, 11));
-		lblBy.setBounds(10, 608, 115, 14);
+		lblBy.setBounds(10, 652, 115, 14);
 		card1.add(lblBy);
 		
 		JRadioButton rbUser = new JRadioButton("User");
@@ -629,7 +511,7 @@ public class TellMeAStory extends JPanel{
 			}
 		});
 		rbUser.setFont(new Font("Calibri", Font.PLAIN, 11));
-		rbUser.setBounds(47, 620, 93, 23);
+		rbUser.setBounds(47, 664, 93, 23);
 		card1.add(rbUser);
 		
 		JRadioButton rbInterEnv = new JRadioButton("Interactive environment");
@@ -640,7 +522,7 @@ public class TellMeAStory extends JPanel{
 			}
 		});
 		rbInterEnv.setFont(new Font("Calibri", Font.PLAIN, 11));
-		rbInterEnv.setBounds(47, 638, 149, 23);
+		rbInterEnv.setBounds(47, 682, 149, 23);
 		card1.add(rbInterEnv);
 		
 		final ButtonGroup TypeEvents = new ButtonGroup();
@@ -672,7 +554,7 @@ public class TellMeAStory extends JPanel{
 				}
 		});
 		btnAddEvent.setFont(new Font("Calibri", Font.PLAIN, 11));
-		btnAddEvent.setBounds(269, 579, 89, 23);
+		btnAddEvent.setBounds(269, 623, 89, 23);
 		card1.add(btnAddEvent);
 		
 		JLabel lblTitle = new JLabel("Title:");
@@ -683,8 +565,22 @@ public class TellMeAStory extends JPanel{
 		JSeparator separator_4 = new JSeparator();
 		separator_4.setBounds(10, 65, 458, 2);
 		card1.add(separator_4);
+		
+		JLabel label1 = new JLabel("New label");
+		label1.setBounds(90, 10, 46, 14);
+		card1.add(label1);
+		
+		JRadioButton rbEvent = new JRadioButton("Event");
+		rbEvent.setBounds(10, 579, 65, 23);
+		card1.add(rbEvent);
+		
+		JRadioButton rbAction = new JRadioButton("Action");
+		rbAction.setBounds(77, 579, 109, 23);
+		card1.add(rbAction);
         tabbedPane.addTab("-		With		-", card2);
         card2.setLayout(null);
+        ImageIcon icon = createImageIcon("images/middle.gif", "a pretty but meaningless splat");
+        label1 = new JLabel("Image and Text", icon, JLabel.CENTER);
         
         JLabel label_8 = new JLabel("Sentences:");
         label_8.setForeground(Color.BLACK);
@@ -802,11 +698,11 @@ public class TellMeAStory extends JPanel{
 //        JScrollPane scrollPane = new JScrollPane();
 //        dynamicTree.add(scrollPane);
         
-        treePanelItems = new DynamicTree();		
+        /*treePanelItems = new DynamicTree();		
 		treePanelItems.setBounds(890, 31, 369, 321);
 		treePanelItems.setFont(new Font("Calibri", Font.PLAIN, 11));
 		card2.add(treePanelItems);
-		populateTreeItems(treePanelItems);
+		populateTreeItems(treePanelItems);*/
 		
 		textPane.setFont(new Font("Calibri", Font.PLAIN, 11));
 		textPane.setEditable(false);
@@ -951,7 +847,7 @@ public class TellMeAStory extends JPanel{
         btnDefConc.addActionListener(new ActionListener() {
         	public void actionPerformed(ActionEvent e) {
         		String[] args = new String[0];
-				UpdateConcurrence.main(args);
+				UpdateConc.main(args);
         	}
         });
         btnDefConc.setFont(new Font("Calibri", Font.PLAIN, 11));
@@ -1100,7 +996,7 @@ public class TellMeAStory extends JPanel{
         	public void actionPerformed(ActionEvent e) {
         		String[] args = new String[0];
 				HardwareItem.main(args);
-				populateTreeItems(treePanelItems);
+				//populateTreeItems(treePanelItems);
         	}
         });
         button_11.setFont(new Font("Calibri", Font.PLAIN, 11));
@@ -1117,7 +1013,7 @@ public class TellMeAStory extends JPanel{
         	public void actionPerformed(ActionEvent e) {
         		String[] args = new String[0];
 				HardwareItemComponents.main(args);
-				populateTreeItems(treePanelItems);
+				//populateTreeItems(treePanelItems);
         	}
         });
         button_12.setFont(new Font("Calibri", Font.PLAIN, 11));
@@ -1129,8 +1025,8 @@ public class TellMeAStory extends JPanel{
         card3.add(separator_3);
         
         treePanelItems = new DynamicTree();		
-		treePanelItems.setBounds(20, 384, 369, 321);
-		treePanelItems.setFont(new Font("Calibri", Font.PLAIN, 11));
+        treePanelItems.setBounds(20, 384, 369, 321);
+        treePanelItems.setFont(new Font("Calibri", Font.PLAIN, 11));
 		card3.add(treePanelItems);
 		populateTreeItems(treePanelItems);
 		

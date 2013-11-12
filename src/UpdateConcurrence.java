@@ -218,7 +218,8 @@ public class UpdateConcurrence {
 		        System.out.println("After Connect Database!");	        
 		        int SeqID = ((comboItem)cbSequences.getSelectedItem()).value;
 		        int EventConID = ((comboItemSeq)cbEvents.getSelectedItem()).value;
-		        int TypeID = ((comboItemSeq)cbEvents.getSelectedItem()).type;	
+		        int TypeID = ((comboItemSeq)cbEvents.getSelectedItem()).type;
+		        
 		        try {
 		        	String Query = "INSERT INTO concurr_events (ConcurrenceID, EventConID, EventConTypeID) VALUES ("+Integer.toString(SeqID)+","+Integer.toString(EventConID)+","+Integer.toString(TypeID)+")";
 		        	System.out.println(Query);
@@ -250,9 +251,9 @@ public class UpdateConcurrence {
 		frame.getContentPane().add(cbSequences);
 		
 		
-		JLabel label_4 = new JLabel("Update sequence");
-		label_4.setFont(new Font("Calibri", Font.PLAIN, 11));
-		label_4.setBounds(10, 11, 127, 14);
-		frame.getContentPane().add(label_4);
+		JLabel lblUpdateConcurrent = new JLabel("Update concurrent");
+		lblUpdateConcurrent.setFont(new Font("Calibri", Font.PLAIN, 11));
+		lblUpdateConcurrent.setBounds(10, 11, 127, 14);
+		frame.getContentPane().add(lblUpdateConcurrent);
 	}
 }

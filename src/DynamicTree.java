@@ -36,6 +36,7 @@
  * a tutorial reader.
  */
 
+import java.awt.Color;
 import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.Toolkit;
@@ -128,11 +129,14 @@ public class DynamicTree extends JPanel {
                                             boolean shouldBeVisible) {
         DefaultMutableTreeNode childNode = 
                 new DefaultMutableTreeNode(child);
+        
+        
 
         if (parent == null) {
             parent = rootNode;
         }
 	
+        
 	//It is key to invoke this on the TreeModel, and NOT DefaultMutableTreeNode
         treeModel.insertNodeInto(childNode, parent, 
                                  parent.getChildCount());

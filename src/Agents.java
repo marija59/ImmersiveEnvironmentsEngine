@@ -43,17 +43,20 @@ public class Agents {
 			cbPlace.removeAllItems();
 			
 			ConnectDatabase cdb = new ConnectDatabase();        
-			String	Query = "SELECT distinct subjects.idsubjects, subjects.SubjectName, VerbID from sentences " 
+			String	Query = "select * from (SELECT distinct subjects.idsubjects as idSub, subjects.SubjectName as SubN, VerbID from sentences " 
 					+ " left join subjects  on sentences.SubjectID = subjects.idsubjects "
-					+ " where subjects.SubjectTypesID<>0  and VerbID = " + Integer.toString(((comboItem)cbEvents.getSelectedItem()).value) + " ";	
+					+ " where subjects.SubjectTypesID<>0  and VerbID = " + Integer.toString(((comboItem)cbEvents.getSelectedItem()).value) + " "
+					+ " union SELECT distinct subjects.idsubjects as idSub, subjects.SubjectName as SubN, VerbID from sentences " 
+					+ " left join subjects  on sentences.ObjectID = subjects.idsubjects " 
+					+ " where subjects.SubjectTypesID<>0  and VerbID = " + Integer.toString(((comboItem)cbEvents.getSelectedItem()).value) + " ) as results";
 			System.out.println(Query);
 			ResultSet result = cdb.st.executeQuery(Query);			  			  
 			String AgentID, AgentName;
 						
 			cbAgent.addItem(new comboItem("", -1));
 			while(result.next()) {
-				AgentID = result.getString("subjects.idsubjects");							
-				AgentName = result.getString("subjects.SubjectName");
+				AgentID = result.getString("idSub");							
+				AgentName = result.getString("SubN");
 				cbAgent.addItem(new comboItem(AgentName, Integer.parseInt(AgentID)));
 			}	
 			

@@ -28,27 +28,17 @@ import java.awt.event.ItemEvent;
 import javax.swing.JRadioButton;
 
 import com.mysql.jdbc.CallableStatement;
+
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 
-class comboItemSeq  
-{  
-  String name;  
-  int value;  
-  int type;
-  public comboItemSeq(String n, int v, int t)  
-  {  
-    name = n; value = v; type = t;
-  } 
-  public String toString(){return name;} 
-}
 
-public class UpdateSequence {
+public class UpdateConc {
 
 	private JFrame frame;
 	private JTextField txtTime;
-	JComboBox cbSequences = new JComboBox(new Object[]{});
-	JComboBox cbEvents = new JComboBox(new Object[]{});
+	JComboBox<comboItem> cbSequences = new JComboBox<comboItem>();
+	JComboBox<?> cbEvents = new JComboBox<Object>(new Object[]{});
 	final JTextPane textPane = new JTextPane();
 	private int isMustMay=-1;
 	
@@ -56,20 +46,20 @@ public class UpdateSequence {
 		ConnectDatabase cdb = new ConnectDatabase();  
 		int SeqID = ((comboItem)cbSequences.getSelectedItem()).value;
 		String Query = "select * from "
-					+ " ( SELECT seq_events.idseq_events as id, subjects.SubjectTypesID, subjects.SubjectName, places.PlaceName, events.EventName, IFNULL(o.SubjectTypesID,'') as objTypesID, IFNULL(o.SubjectName, '') as ObjectName, IFNULL(po.PlaceName, '') as ObjPlaceName, seq_events.Time  as SeqTime"  
-					+ " from sequences 	join seq_events on sequences.idsequence = seq_events.SequenceID "  
-					+ " left join sentences on sentences.idSentences = seq_events.EventConID " 	
-					+ " left join subjects on sentences.SubjectID = subjects.idsubjects "  
-					+ " left join subjects o on sentences.ObjectID = o.idsubjects "  
-					+ " left join events  on sentences.VerbID = events.idevents "  
-					+ " left join places on sentences.LocationID = places.idplaces "  
-					+ " left join places po on sentences.LocationObjectID = po.idplaces "   
-					+ " where sequences.idsequence = " + Integer.toString(SeqID) +  " and seq_events.TypeID = 1 " 
+					+ " ( SELECT concurr_events.idconcurr_events as id, subjects.SubjectTypesID, subjects.SubjectName, places.PlaceName, events.EventName, IFNULL(o.SubjectTypesID,'') as objTypesID, IFNULL(o.SubjectName, '') as ObjectName, IFNULL(po.PlaceName, '') as ObjPlaceName "
+					+ " from concurrences 	join concurr_events on concurrences.idconcurrences = concurr_events.ConcurrenceID " 
+					+ " left join sentences on sentences.idSentences = concurr_events.EventConID " 
+					+ " left join subjects on sentences.SubjectID = subjects.idsubjects " 
+					+ " left join subjects o on sentences.ObjectID = o.idsubjects " 
+					+ " left join events  on sentences.VerbID = events.idevents " 
+					+ " left join places on sentences.LocationID = places.idplaces " 
+					+ " left join places po on sentences.LocationObjectID = po.idplaces " 
+					+ " where concurrences.idconcurrences = 1 and concurr_events.EventConTypeID = 1 " 
 					+ " union " 
-					+ " select seq_events.idseq_events as id, 3 as SybjectTypesID, concurrences.NameConc as SubjectName, '' as PlaceName, '' as EventName, '' as objeTypesID, '' as ObjectName, '' as ObjPlaceName, seq_events.Time  as SeqTime "
-					+ " from sequences 	join seq_events on sequences.idsequence = seq_events.SequenceID "  
-					+ " join concurrences on concurrences.idconcurrences = seq_events.EventConID "
-					+ " where sequences.idsequence =  " + Integer.toString(SeqID) +  " and seq_events.TypeID = 2 ) as result "
+					+ " select concurr_events.idconcurr_events as id, 3 as SybjectTypesID, sequences.NameSeq as SubjectName, '' as PlaceName, '' as EventName, '' as objeTypesID, '' as ObjectName, '' as ObjPlaceName " 
+					+ " from concurrences 	join concurr_events on concurrences.idconcurrences = concurr_events.ConcurrenceID " 
+					+ " join sequences on sequences.idsequence = concurr_events.EventConID " 
+					+ " where concurrences.idconcurrences =  1 and concurr_events.EventConTypeID = 3 ) as result " 
 					+ " order by id ";
 		System.out.println(Query);
 		try	{
@@ -85,13 +75,12 @@ public class UpdateSequence {
 				Verb = result.getString("EventName");
 				ObjName = result.getString("ObjectName");
 				ObjPlaceName = result.getString("ObjPlaceName");
-				SeqTime = result.getString("SeqTime");
+				
 				StyledDocument doc = textPane.getStyledDocument();		
 			
 
 				try {
-					javax.swing.text.Style style = textPane.addStyle("Style", null);
-					doc.insertString(doc.getLength(), SeqTime + " msec   ", style);
+					javax.swing.text.Style style = textPane.addStyle("Style", null);					
 					if (SubType.equals("3")){
 						doc.insertString(doc.getLength(), SubName + "  \n ", style);
 					}
@@ -125,18 +114,19 @@ public class UpdateSequence {
 	
 	
 	private void getData(){
-		cbEvents.removeAll();
+		cbEvents.removeAllItems();
 		try	{
 			ConnectDatabase cdb = new ConnectDatabase();        
-			String Query = "SELECT idSentences as SenConcID, concat(subjects.SubjectName, places.PlaceName, events.EventName, IFNULL(o.SubjectName, ''),  IFNULL(po.PlaceName, '')) as NameEvConc, 1 as Type " 
-						+ " from sentences left join subjects on sentences.SubjectID = subjects.idsubjects "
-						+ " left join subjects o on sentences.ObjectID = o.idsubjects "
-						+ " left join events  on sentences.VerbID = events.idevents "
-						+ " left join places on sentences.LocationID = places.idplaces "
-						+ " left join places po on sentences.LocationObjectID = po.idplaces "
+			String Query = "SELECT idSentences as SenConcID, concat(subjects.SubjectName, places.PlaceName, events.EventName, IFNULL(o.SubjectName, ''),  IFNULL(po.PlaceName, '')) as NameEvSeq, 1 as Type " 
+						+ " from sentences left join subjects on sentences.SubjectID = subjects.idsubjects " 
+						+ " left join subjects o on sentences.ObjectID = o.idsubjects " 
+						+ " left join events  on sentences.VerbID = events.idevents " 
+						+ " left join places on sentences.LocationID = places.idplaces " 
+						+ " left join places po on sentences.LocationObjectID = po.idplaces " 
 						+ " union " 
-						+ " select idconcurrences as SenConcID, NameConc as NameEvConc, 2 as Type " 
-						+ " from concurrences";		
+						+ " select idsequence as SenConcID, NameSeq as NameEvSeq, 3 as Type " 
+						+ " from sequences";	
+			System.out.println(Query);
 			ResultSet result = cdb.st.executeQuery(Query);			  			  
 			String SentenceID, Type, OneSentence = "";	
 			List<comboItemSeq> sentences = new ArrayList<comboItemSeq>();		    
@@ -144,33 +134,28 @@ public class UpdateSequence {
 		    sentences.add(cItem);
 			while(result.next()) {
 				SentenceID = result.getString("SenConcID");
-				OneSentence = result.getString("NameEvConc");				
+				OneSentence = result.getString("NameEvSeq");				
 				Type = result.getString("Type");
 			    cItem = new comboItemSeq(OneSentence, Integer.parseInt(SentenceID), Integer.parseInt(Type));
 			    sentences.add(cItem);	
 			}
 			comboItemSeq [] sentenceArray = sentences.toArray( new comboItemSeq[sentences.size()]);	
-			
-			cbEvents = new JComboBox(sentenceArray);
+			System.out.println(sentenceArray[5]);
+			cbEvents = new JComboBox<Object>(sentenceArray);
 			cbEvents.setFont(new Font("Calibri", Font.PLAIN, 11));
 		}
 		catch(SQLException ex){System.out.print(ex);}
 		
 		try	{
 			ConnectDatabase cdb = new ConnectDatabase();        
-			String Query = "SELECT NameSeq, idsequence from sequences";			
+			String Query = "select NameConc, idconcurrences from concurrences";			
 			ResultSet result = cdb.st.executeQuery(Query);
-			List<comboItem> sequences = new ArrayList<comboItem>();		    
-			comboItem cItem = new comboItem("", -1);
-			sequences.add(cItem);
+			cbSequences.addItem(new comboItem("", -1));
 			while(result.next()) {
-				String SeqID = result.getString("idsequence");							
-				String SeqName = result.getString("NameSeq");				
-			    cItem = new comboItem(SeqName, Integer.parseInt(SeqID));
-			    sequences.add(cItem);	
+				
+			    cbSequences.addItem(new comboItem(result.getString("NameConc"), result.getInt("idconcurrences")));	
 			}
-			comboItem [] seqArray = sequences.toArray( new comboItem[sequences.size()]);
-			cbSequences = new JComboBox(seqArray);
+			
 			
 			cbSequences.setFont(new Font("Calibri", Font.PLAIN, 11));
 			
@@ -187,7 +172,7 @@ public class UpdateSequence {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					UpdateSequence window = new UpdateSequence();
+					UpdateConc window = new UpdateConc();
 					window.frame.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -199,7 +184,7 @@ public class UpdateSequence {
 	/**
 	 * Create the application.
 	 */
-	public UpdateSequence() {
+	public UpdateConc() {
 		getData();
 		initialize();
 	}
@@ -286,26 +271,25 @@ public class UpdateSequence {
 				
 				String Guard="", Action="", Variable="", InitialValue = "0";
 				try {
-					CallableStatement cs = (CallableStatement) cdb.con.prepareCall("{call SelectSeqGuard(" + SeqID + ")}");
+					CallableStatement cs = (CallableStatement) cdb.con.prepareCall("{call SelectConGuard(" + SeqID + ")}");
 					ResultSet result = cs.executeQuery(); 
 					if(result.next()) {
 						Guard = result.getString("newguard");
 					}
 							
-			        String Query = "INSERT INTO seq_events (SequenceID, EventConID, TypeID, Time, Guard, isMust) "
-			        			+ " VALUES (" + Integer.toString(SeqID) + "," + Integer.toString(EventConID) + "," + Integer.toString(TypeID)
-			        			+"," + txtTime.getText() + ",'" + Guard + "'," + Integer.toString(isMustMay) + ")";
+			        String Query = "INSERT INTO concurr_events (ConcurrenceID, EventConID, EventConTypeID, Guard) "
+			        			+ " VALUES (" + Integer.toString(SeqID) + "," + Integer.toString(EventConID) + "," + Integer.toString(TypeID) + ",'" + Guard + "')";
 			        System.out.println(Query);
 			        int val = cdb.st.executeUpdate(Query);
 			        System.out.println("1 row affected");
 			        
-			        String LastIDQuery = "select idseq_events from seq_events where SequenceID = " + SeqID + " order by idseq_events desc limit 1";
+			        String LastIDQuery = "select idconcurr_events from concurr_events where ConcurrenceID = " + SeqID + " order by idconcurr_events desc limit 1";
 					ResultSet resultLastID = cdb.st.executeQuery(LastIDQuery);
 					if(resultLastID.next()) {
-						Action = "GS" + Integer.toString(resultLastID.getInt("idseq_events"))+"==1";
-						Variable = "GS" + Integer.toString(resultLastID.getInt("idseq_events"));
+						Action = "GC" + Integer.toString(resultLastID.getInt("idconcurr_events"))+"==1";
+						Variable = "GC" + Integer.toString(resultLastID.getInt("idconcurr_events"));
 					}
-					String UpdateQuery = "UPDATE seq_events SET Action = '" +Action+ "', Variable = '" + Variable + "' where idseq_events = " + Integer.toString(resultLastID.getInt("idseq_events"));
+					String UpdateQuery = "UPDATE concurr_events SET Action = '" +Action+ "', Variable = '" + Variable + "' where idconcurr_events = " + Integer.toString(resultLastID.getInt("idconcurr_events"));
 					System.out.println(UpdateQuery);
 					cdb2.st.executeUpdate(UpdateQuery);
 					System.out.println("1 row affected");
